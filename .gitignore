@@ -1,0 +1,9 @@
+# Personal study material — kept out of the public repo
+Idea/
+
+# Local scratch space used by the agent skills
+.scratch/
+
+# OS / editor noise
+Thumbs.db
+.DS_Store
