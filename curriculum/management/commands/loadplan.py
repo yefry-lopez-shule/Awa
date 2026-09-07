@@ -15,7 +15,16 @@ import yaml
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from curriculum.models import Block, BlockEntry, Course, Institution, Plan, Prerequisite, Program
+from curriculum.models import (
+    AppSettings,
+    Block,
+    BlockEntry,
+    Course,
+    Institution,
+    Plan,
+    Prerequisite,
+    Program,
+)
 
 
 class Command(BaseCommand):
@@ -43,6 +52,14 @@ class Command(BaseCommand):
         institution = self._reconcile_institution(data["institution"])
         program = self._reconcile_program(institution, data["program"])
         plan = self._reconcile_plan(program, data.get("plan", {}))
+
+        # No CRUD screen sets the active Plan (ADR-0003), so the first plan
+        # ever loaded becomes active by default; a later `loadplan` never
+        # overrides a choice already in place.
+        app_settings = AppSettings.load()
+        if app_settings.active_plan_id is None:
+            app_settings.active_plan = plan
+            app_settings.save()
 
         # Pass 1 — every Block and its entries, reconciling Courses as we go.
         # A course code may appear in more than one Block across a file (rare,

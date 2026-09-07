@@ -16,8 +16,9 @@ Including another URLconf
 """
 
 # No django.contrib.admin route: ADR-0005 — every screen is custom, deliberately.
-from django.urls import path
+from django.urls import include, path
 
 urlpatterns = [
+    path("", include("studying.urls")),
     # Wired up as each app's views land (#1-#6).
 ]

@@ -7,7 +7,7 @@ and ADR-0010 (Status lives on the Course; Outcome lives on the Enrollment).
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from curriculum.models import Course
+from curriculum.models import Course, Program
 
 
 class Status(models.TextChoices):
@@ -63,3 +63,61 @@ def status_for_course(course):
         return Status(course.status_record.status)
     except CourseStatus.DoesNotExist:
         return Status.PENDING
+
+
+class Difficulty(models.TextChoices):
+    """The student's own rating of how hard a Course is for them. Compounds
+    (ADR-0004): raises the Target and multiplies the Score.
+    """
+
+    EASY = "easy", _("Easy")
+    NORMAL = "normal", _("Normal")
+    HARD = "hard", _("Hard")
+
+
+class Outcome(models.TextChoices):
+    """How one Enrollment ended (ADR-0010). Narrower than Status: no PENDING
+    (an Enrollment means you enrolled) and no TRANSFERRED (that is the
+    absence of an attempt).
+    """
+
+    IN_PROGRESS = "in_progress", _("In progress")
+    PASSED = "passed", _("Passed")
+    FAILED = "failed", _("Failed")
+
+
+class Term(models.Model):
+    """A dated period during which the student is enrolled in Courses."""
+
+    program = models.ForeignKey(Program, on_delete=models.CASCADE, related_name="terms")
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    class Meta:
+        ordering = ["-start_date"]
+
+    def __str__(self):
+        return f"{self.program.code} {self.start_date}–{self.end_date}"
+
+
+class Enrollment(models.Model):
+    """One Course taken by the student in one Term (ADR-0010, ADR-0011).
+
+    Distinct from Course because the same Course can be retaken: a failed
+    attempt and a later passing attempt are two Enrollment rows.
+    """
+
+    term = models.ForeignKey(Term, on_delete=models.CASCADE, related_name="enrollments")
+    course = models.ForeignKey(Course, on_delete=models.PROTECT, related_name="enrollments")
+    outcome = models.CharField(max_length=20, choices=Outcome.choices, default=Outcome.IN_PROGRESS)
+    difficulty = models.CharField(
+        max_length=10, choices=Difficulty.choices, default=Difficulty.NORMAL
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["term", "course"], name="unique_enrollment_per_term")
+        ]
+
+    def __str__(self):
+        return f"{self.course.code} @ {self.term}"

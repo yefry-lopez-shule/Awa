@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load i18n l10n %}
+
+{% block title %}{% trans "Onboarding checklist" %} — Awá{% endblock %}
+
+{% block content %}
+<h1>{% trans "Onboarding checklist" %}</h1>
+
+{% if not plan %}
+    <p>{% trans "No active Plan yet — load one with manage.py loadplan." %}</p>
+{% else %}
+    <p>{{ plan }}</p>
+
+    {% if errors %}
+        <div class="errors">
+            <ul>
+                {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        <fieldset>
+            <legend>{% trans "Term dates (only needed the first time you mark a Course in progress)" %}</legend>
+            <label>{% trans "Start date" %} <input type="date" name="term_start"></label>
+            <label>{% trans "End date" %} <input type="date" name="term_end"></label>
+        </fieldset>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>{% trans "Course" %}</th>
+                    <th>{% trans "Status" %}</th>
+                    <th>{% trans "Grade" %}</th>
+                    <th>{% trans "Difficulty" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% regroup rows by entry.block as block_list %}
+                {% for block_group in block_list %}
+                    <tr class="block-header">
+                        <td colspan="4">{% blocktrans with name=block_group.grouper.name credits=block_group.grouper.credits %}Bloque {{ name }} ({{ credits }} créditos){% endblocktrans %}</td>
+                    </tr>
+                    {% for row in block_group.list %}
+                        <tr>
+                            <td>
+                                {% if row.entry.course %}
+                                    {{ row.entry.course.code }} — {{ row.entry.course.name }}
+                                    {% if not row.unlocked %}
+                                        <span class="warning">⚠ {% trans "prerequisite not yet satisfied" %}</span>
+                                    {% endif %}
+                                {% else %}
+                                    {% trans "Slot" %}: {{ row.entry.slot_label }} #{{ row.entry.slot_index }}
+                                    ({{ row.entry.credits }} {% trans "créditos" %})
+                                    <br>
+                                    <input type="text" name="slot_code_{{ row.entry.id }}" placeholder="{% trans 'código' %}">
+                                    <input type="text" name="slot_name_{{ row.entry.id }}" placeholder="{% trans 'name' %}">
+                                {% endif %}
+                            </td>
+                            <td>
+                                <select name="status_{{ row.entry.id }}">
+                                    <option value="pending" {% if row.status == "pending" %}selected{% endif %}>{% trans "Pending" %}</option>
+                                    <option value="in_progress" {% if row.status == "in_progress" %}selected{% endif %}>{% trans "In progress" %}</option>
+                                    <option value="passed" {% if row.status == "passed" %}selected{% endif %}>{% trans "Passed" %}</option>
+                                    <option value="transferred" {% if row.status == "transferred" %}selected{% endif %}>{% trans "Transferred" %}</option>
+                                    <option value="failed" {% if row.status == "failed" %}selected{% endif %}>{% trans "Failed" %}</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" step="0.1" name="grade_{{ row.entry.id }}" value="{{ row.final_grade|default_if_none:''|unlocalize }}" style="width: 5em;">
+                            </td>
+                            <td>
+                                <select name="difficulty_{{ row.entry.id }}">
+                                    <option value="easy">{% trans "Easy" %}</option>
+                                    <option value="normal" selected>{% trans "Normal" %}</option>
+                                    <option value="hard">{% trans "Hard" %}</option>
+                                </select>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="submit">{% trans "Save" %}</button>
+    </form>
+{% endif %}
+{% endblock %}
