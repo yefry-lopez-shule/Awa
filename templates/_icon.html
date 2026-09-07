@@ -1,0 +1,4 @@
+{% load static %}{% comment %}
+One sprite reference. `name` is a symbol id in static/awa/icons.svg. Decorative
+only — the surrounding link or button carries the accessible name.
+{% endcomment %}<svg class="icon" aria-hidden="true"><use href="{% static 'awa/icons.svg' %}#{{ name }}"></use></svg>

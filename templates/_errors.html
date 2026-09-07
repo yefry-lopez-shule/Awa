@@ -1,0 +1,12 @@
+{% comment %}
+Shared form-error block. Five screens pass an `errors` iterable of plain
+strings in their context; this replaces the copy each of them used to carry.
+Unstyled beyond the `.errors` container — the polish pass (#34) restyles it.
+{% endcomment %}
+{% if errors %}
+    <div class="errors">
+        <ul>
+            {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+    </div>
+{% endif %}

@@ -10,13 +10,7 @@
     <p>{% trans "No active Plan yet — load one with manage.py loadplan." %}</p>
 {% else %}
 
-{% if errors %}
-    <div class="errors">
-        <ul>
-            {% for error in errors %}<li>{{ error }}</li>{% endfor %}
-        </ul>
-    </div>
-{% endif %}
+{% include "_errors.html" %}
 
 {% if step == "closeout" %}
     <h2>{% trans "Close the last Term" %}</h2>

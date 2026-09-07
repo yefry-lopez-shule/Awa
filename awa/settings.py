@@ -128,8 +128,14 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
+#
+# #30: the skin's own assets (vendored Pico, app.css, self-hosted IBM Plex,
+# the icon sprite) live in BASE_DIR / "static". runserver serves them straight
+# from here with DEBUG=True — no collectstatic, no WhiteNoise (epic #29).
 
 STATIC_URL = "static/"
+
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

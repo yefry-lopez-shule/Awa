@@ -15,8 +15,13 @@ artifact (git-ignored), so the suite can't assume they are already on disk.
 """
 
 import datetime
+import hashlib
+import re
+from pathlib import Path
 
+from django.contrib.staticfiles import finders
 from django.core.management import call_command
+from django.templatetags.static import static
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import translation
@@ -230,8 +235,8 @@ class EveryScreenRendersInBothLocalesTests(TestCase):
             enrollment=enrollment, type="parcial", weight=100, due_at=datetime.date(2026, 3, 1)
         )
 
-    def test_all_screens_return_200_in_each_locale(self):
-        urls = [
+    def screen_urls(self):
+        return [
             reverse("planning:dashboard"),
             reverse("studying:quick_log"),
             reverse("studying:onboarding"),
@@ -241,8 +246,53 @@ class EveryScreenRendersInBothLocalesTests(TestCase):
             reverse("reference:roadmap"),
             reverse("studying:course_detail", args=[self.course.id]),
         ]
+
+    def each_screen(self, language):
+        """Set the locale, then yield (url, decoded html) for every screen."""
+        self.client.post(reverse("set_language"), {"language": language, "next": "/"})
+        for url in self.screen_urls():
+            yield url, self.client.get(url)
+
+    def test_all_screens_return_200_in_each_locale(self):
         for language in ("es", "en"):
-            self.client.post(reverse("set_language"), {"language": language, "next": "/"})
-            for url in urls:
+            for url, response in self.each_screen(language):
                 with self.subTest(language=language, url=url):
-                    self.assertEqual(self.client.get(url).status_code, 200)
+                    self.assertEqual(response.status_code, 200)
+
+    def test_every_screen_links_the_skin_stylesheets_in_each_locale(self):
+        # #30: Pico + app.css come from base.html, so every screen carries both
+        # links regardless of locale.
+        pico = static("vendor/pico.classless.jade.min.css")
+        app_css = static("awa/app.css")
+        for language in ("es", "en"):
+            for url, response in self.each_screen(language):
+                with self.subTest(language=language, url=url):
+                    html = response.content.decode()
+                    self.assertIn(f'href="{pico}"', html)
+                    self.assertIn(f'href="{app_css}"', html)
+
+    def test_a_staticfiles_finder_resolves_every_referenced_asset(self):
+        # #30: no collectstatic in this project — every asset base.html and
+        # app.css point at must resolve through a finder straight from
+        # STATICFILES_DIRS. The font list is read back out of app.css so this
+        # can't drift from the actual @font-face rules.
+        app_css = finders.find("awa/app.css")
+        self.assertIsNotNone(app_css, "awa/app.css does not resolve")
+        css = Path(app_css).read_text(encoding="utf-8")
+        font_urls = re.findall(r'url\("([^"]+\.woff2)"\)', css)
+        self.assertGreaterEqual(len(font_urls), 8, "expected the IBM Plex @font-face rules")
+
+        referenced = ["vendor/pico.classless.jade.min.css", "awa/app.css", "awa/icons.svg"]
+        referenced += [f"awa/{u}" for u in font_urls]  # app.css lives under static/awa/
+        for asset in referenced:
+            with self.subTest(asset=asset):
+                self.assertIsNotNone(finders.find(asset), f"{asset} does not resolve")
+
+    def test_vendored_pico_matches_the_hash_pinned_in_its_readme(self):
+        # #30 / epic #29: Pico is "hash-checked against the GitHub release". The
+        # SHA-256 recorded in static/vendor/README.md is the check; this asserts
+        # the committed file still matches it.
+        pico = Path(finders.find("vendor/pico.classless.jade.min.css"))
+        digest = hashlib.sha256(pico.read_bytes()).hexdigest()
+        readme = (pico.parent / "README.md").read_text(encoding="utf-8")
+        self.assertIn(digest, readme)

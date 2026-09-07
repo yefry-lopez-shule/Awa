@@ -1,51 +1,57 @@
-{% load i18n %}<!DOCTYPE html>
+{% load i18n static %}<!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Awá{% endblock %}</title>
-    <style>
-        body { font-family: sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; color: #222; }
-        table { border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; }
-        th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; vertical-align: top; }
-        th { background: #f0f0f0; }
-        .block-header td { background: #e6e6e6; font-weight: bold; }
-        .warning { color: #a15c00; }
-        .unlocked { color: #1a7f37; font-weight: bold; }
-        .projection { color: #57606a; font-style: italic; }
-        nav { margin-bottom: 1.5rem; }
-        nav a { margin-right: 1rem; }
-        .language-switcher { display: inline; margin-left: 0.5rem; }
-        .errors { background: #fdecea; border: 1px solid #f5c2c0; padding: 0.75rem 1rem; margin-bottom: 1rem; }
-        .messages { background: #eaf7ea; border: 1px solid #b9e0b9; padding: 0.75rem 1rem; margin-bottom: 1rem; }
-    </style>
+    <link rel="stylesheet" href="{% static 'vendor/pico.classless.jade.min.css' %}">
+    <link rel="stylesheet" href="{% static 'awa/app.css' %}">
 </head>
 <body>
-<nav>
-    <a href="{% url 'planning:dashboard' %}">{% trans "Dashboard" %}</a>
-    <a href="{% url 'studying:quick_log' %}">{% trans "Quick log" %}</a>
-    <a href="{% url 'studying:onboarding' %}">{% trans "Onboarding checklist" %}</a>
-    <a href="{% url 'studying:cuatrimestre_setup' %}">{% trans "Cuatrimestre setup" %}</a>
-    <a href="{% url 'studying:degree_map' %}">{% trans "Degree map" %}</a>
-    <a href="{% url 'planning:availability_template' %}">{% trans "Availability template" %}</a>
-    <a href="{% url 'reference:roadmap' %}">{% trans "Roadmap" %}</a>
-    <form action="{% url 'set_language' %}" method="post" class="language-switcher">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-        <label for="language-select">{% trans "Language" %}</label>
-        <select id="language-select" name="language" onchange="this.form.submit()">
-            {% get_current_language as current_language %}
-            {% for code, name in LANGUAGES %}
-                <option value="{{ code }}" {% if code == current_language %}selected{% endif %}>{{ name }}</option>
-            {% endfor %}
-        </select>
-        <noscript><button type="submit">{% trans "Switch" %}</button></noscript>
-    </form>
+<nav class="site-nav">
+    {% comment %}
+    CSS-only disclosure: a plain <details>. On narrow screens it collapses behind
+    the summary; app.css force-opens it and hides the summary above the
+    breakpoint. No script anywhere.
+
+    The summary's aria-label is a hardcoded English a11y string: issue #30 locks
+    the es/en message catalogs for this pass, so it cannot be run through a trans
+    tag yet. A later i18n sweep should wrap it.
+    {% endcomment %}
+    <details class="nav-disclosure">
+        <summary aria-label="Menu">{% include "_icon.html" with name="menu" %}</summary>
+        <ul class="nav-links">
+            <li><a href="{% url 'planning:dashboard' %}">{% include "_icon.html" with name="dashboard" %}{% trans "Dashboard" %}</a></li>
+            <li><a href="{% url 'studying:quick_log' %}">{% include "_icon.html" with name="quick-log" %}{% trans "Quick log" %}</a></li>
+            <li><a href="{% url 'studying:onboarding' %}">{% include "_icon.html" with name="onboarding" %}{% trans "Onboarding checklist" %}</a></li>
+            <li><a href="{% url 'studying:cuatrimestre_setup' %}">{% include "_icon.html" with name="term-setup" %}{% trans "Cuatrimestre setup" %}</a></li>
+            <li><a href="{% url 'studying:degree_map' %}">{% include "_icon.html" with name="degree-map" %}{% trans "Degree map" %}</a></li>
+            <li><a href="{% url 'planning:availability_template' %}">{% include "_icon.html" with name="availability" %}{% trans "Availability template" %}</a></li>
+            <li><a href="{% url 'reference:roadmap' %}">{% include "_icon.html" with name="roadmap" %}{% trans "Roadmap" %}</a></li>
+            <li>
+                <form action="{% url 'set_language' %}" method="post" class="language-switcher">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <label for="language-select">{% trans "Language" %}</label>
+                    <select id="language-select" name="language" onchange="this.form.submit()">
+                        {% get_current_language as current_language %}
+                        {% for code, name in LANGUAGES %}
+                            <option value="{{ code }}" {% if code == current_language %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                    <noscript><button type="submit">{% trans "Switch" %}</button></noscript>
+                </form>
+            </li>
+        </ul>
+    </details>
 </nav>
 {% if messages %}
     <ul class="messages">
         {% for message in messages %}<li>{{ message }}</li>{% endfor %}
     </ul>
 {% endif %}
+<main>
 {% block content %}{% endblock %}
+</main>
 </body>
 </html>
