@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load i18n l10n %}
+
+{% block title %}{% trans "Availability template" %} — Awá{% endblock %}
+
+{% block content %}
+<h1>{% trans "Availability template" %}</h1>
+
+{% if errors %}
+    <div class="errors">
+        <ul>
+            {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+<p class="capacity">
+    {% blocktrans with hours=capacity|floatformat:1 %}Capacity: {{ hours }} h/week{% endblocktrans %}
+</p>
+
+{% if overload.overloaded %}
+    <p class="warning">
+        {% blocktrans with demand=overload.demand|floatformat:1 capacity=overload.capacity|floatformat:1 %}
+        The Plan demands {{ demand }} h this week; you have {{ capacity }} h.
+        {% endblocktrans %}
+    </p>
+{% endif %}
+
+{% if targets %}
+    <table>
+        <thead>
+            <tr><th>{% trans "Course" %}</th><th>{% trans "Target (h/week)" %}</th></tr>
+        </thead>
+        <tbody>
+            {% for row in targets %}
+                <tr>
+                    <td>{{ row.course.code }} — {{ row.course.name }}</td>
+                    <td>{{ row.hours|floatformat:1 }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% elif not term %}
+    <p>{% trans "No Term open yet — the overload warning appears once Courses are enrolled." %}</p>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+
+    <h2>{% trans "Study Windows" %}</h2>
+    <p>{% trans "The hours you are willing to study within, per weekday. Leave both blank for a day you never study." %}</p>
+    <table>
+        <thead>
+            <tr><th>{% trans "Weekday" %}</th><th>{% trans "Start" %}</th><th>{% trans "End" %}</th></tr>
+        </thead>
+        <tbody>
+            {% for row in weekday_rows %}
+                <tr>
+                    <td>{{ row.label }}</td>
+                    <td><input type="time" name="window_start_{{ row.value }}" value="{% if row.window %}{{ row.window.start|time:'H:i' }}{% endif %}"></td>
+                    <td><input type="time" name="window_end_{{ row.value }}" value="{% if row.window %}{{ row.window.end|time:'H:i' }}{% endif %}"></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>{% trans "Availability Blocks" %}</h2>
+    <p>{% trans "Recurring commitments that consume hours — work, class, gym, chores. Never studied, only subtracted." %}</p>
+    <table>
+        <thead>
+            <tr>
+                <th>{% trans "Weekday" %}</th><th>{% trans "Start" %}</th><th>{% trans "End" %}</th>
+                <th>{% trans "Label" %}</th><th>{% trans "Remove" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for block in blocks %}
+                <tr>
+                    <td>
+                        <select name="block_{{ block.id }}_weekday">
+                            {% for value, label in weekday_choices %}
+                                <option value="{{ value }}" {% if value == block.weekday %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td><input type="time" name="block_{{ block.id }}_start" value="{{ block.start|time:'H:i' }}"></td>
+                    <td><input type="time" name="block_{{ block.id }}_end" value="{{ block.end|time:'H:i' }}"></td>
+                    <td><input type="text" name="block_{{ block.id }}_label" value="{{ block.label }}"></td>
+                    <td><input type="checkbox" name="block_{{ block.id }}_delete"></td>
+                </tr>
+            {% endfor %}
+            <tr>
+                <td>
+                    <select name="new_block_weekday">
+                        <option value="">—</option>
+                        {% for value, label in weekday_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td><input type="time" name="new_block_start"></td>
+                <td><input type="time" name="new_block_end"></td>
+                <td><input type="text" name="new_block_label" placeholder="{% trans 'e.g. Work' %}"></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <button type="submit">{% trans "Save" %}</button>
+</form>
+{% endblock %}
