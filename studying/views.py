@@ -12,7 +12,7 @@ from django.utils.translation import gettext as _
 from curriculum.models import AppSettings, BlockEntry, Course
 
 from .models import CourseStatus, Difficulty, Enrollment, Outcome, Status, Term, status_for_course
-from .queries import is_unlocked
+from .queries import credits_earned, is_unlocked, opens_next_term
 
 
 def onboarding(request):
@@ -47,6 +47,70 @@ def onboarding(request):
     if errors:
         context["errors"] = errors
     return render(request, "studying/onboarding.html", context)
+
+
+def degree_map(request):
+    """The degree map (#11): the five Bloques, créditos earned against the
+    Plan's total, and which Courses are unlocked — with a distinct projection
+    for what opens once this term's in-progress Courses pass.
+
+    Reads `CourseStatus`, `BlockEntry` and the curriculum queries from #9,
+    scoped to the Plan named by `AppSettings`. Nothing here is cached: the
+    projection is recomputed every view, so a Course later marked failed
+    simply stops appearing in it.
+    """
+
+    plan = AppSettings.load().active_plan
+    if plan is None:
+        return render(request, "studying/degree_map.html", {"plan": None, "blocks": []})
+
+    blocks = []
+    credits_required = 0
+    for block in plan.blocks.prefetch_related("entries__course__status_record"):
+        rows = []
+        for entry in block.entries.all():
+            course = entry.course
+            if course is None:
+                rows.append(
+                    {
+                        "entry": entry,
+                        "course": None,
+                        "is_slot": True,
+                        "status": None,
+                        "unlocked": False,
+                        "opens_next_term": False,
+                        "credits": entry.credits,
+                    }
+                )
+                continue
+            rows.append(
+                {
+                    "entry": entry,
+                    "course": course,
+                    "is_slot": False,
+                    "status": status_for_course(course),
+                    "unlocked": is_unlocked(course, plan),
+                    "opens_next_term": opens_next_term(course, plan),
+                    "credits": entry.credits,
+                }
+            )
+        blocks.append(
+            {
+                "block": block,
+                "rows": rows,
+                "credits_earned": credits_earned(plan, block=block),
+                "credits_total": block.credits,
+            }
+        )
+        credits_required += block.credits
+
+    context = {
+        "plan": plan,
+        "blocks": blocks,
+        "credits_earned_total": credits_earned(plan),
+        "credits_required": credits_required,
+    }
+    return render(request, "studying/degree_map.html", context)
 
 
 def _build_rows(entries, plan):

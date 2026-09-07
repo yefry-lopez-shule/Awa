@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Degree map" %} — Awá{% endblock %}
+
+{% block content %}
+<h1>{% trans "Degree map" %}</h1>
+
+{% if not plan %}
+    <p>{% trans "No active Plan yet — load one with manage.py loadplan." %}</p>
+{% else %}
+    <p>{{ plan }}</p>
+
+    <p class="progress-total">
+        {% blocktrans with earned=credits_earned_total required=credits_required %}
+        {{ earned }} of {{ required }} créditos earned
+        {% endblocktrans %}
+    </p>
+
+    {% for block in blocks %}
+        <table>
+            <thead>
+                <tr class="block-header">
+                    <td colspan="3">
+                        {% blocktrans with name=block.block.name earned=block.credits_earned total=block.credits_total %}
+                        Bloque {{ name }} — {{ earned }} / {{ total }} créditos
+                        {% endblocktrans %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>{% trans "Course" %}</th>
+                    <th>{% trans "Créditos" %}</th>
+                    <th>{% trans "Standing" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in block.rows %}
+                    <tr>
+                        <td>
+                            {% if row.is_slot %}
+                                {% trans "Slot" %}: {{ row.entry.slot_label }} #{{ row.entry.slot_index }}
+                            {% else %}
+                                {{ row.course.code }} — {{ row.course.name }}
+                            {% endif %}
+                        </td>
+                        <td>{{ row.credits }}</td>
+                        <td>
+                            {% if row.is_slot %}
+                                <span class="warning">{% trans "outstanding" %}</span>
+                            {% else %}
+                                {{ row.status.label }}
+                                {% if row.status == "pending" and row.unlocked %}
+                                    <span class="unlocked">{% trans "unlocked" %}</span>
+                                {% elif row.status == "pending" and row.opens_next_term %}
+                                    <span class="projection">{% trans "opens next term" %}</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+{% endif %}
+{% endblock %}

@@ -10,11 +10,19 @@
         th { background: #f0f0f0; }
         .block-header td { background: #e6e6e6; font-weight: bold; }
         .warning { color: #a15c00; }
+        .unlocked { color: #1a7f37; font-weight: bold; }
+        .projection { color: #57606a; font-style: italic; }
+        nav { margin-bottom: 1.5rem; }
+        nav a { margin-right: 1rem; }
         .errors { background: #fdecea; border: 1px solid #f5c2c0; padding: 0.75rem 1rem; margin-bottom: 1rem; }
         .messages { background: #eaf7ea; border: 1px solid #b9e0b9; padding: 0.75rem 1rem; margin-bottom: 1rem; }
     </style>
 </head>
 <body>
+<nav>
+    <a href="{% url 'studying:onboarding' %}">{% trans "Onboarding checklist" %}</a>
+    <a href="{% url 'studying:degree_map' %}">{% trans "Degree map" %}</a>
+</nav>
 {% if messages %}
     <ul class="messages">
         {% for message in messages %}<li>{{ message }}</li>{% endfor %}

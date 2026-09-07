@@ -5,7 +5,7 @@ from django.test import TestCase
 from curriculum.models import AppSettings, Course, Institution, Plan, Prerequisite, Program
 
 from .models import CourseStatus, Status, status_for_course
-from .queries import credits_earned, is_unlocked
+from .queries import credits_earned, is_unlocked, opens_next_term
 
 
 def make_program_and_plan():
@@ -154,3 +154,84 @@ class CreditsEarnedTests(TestCase):
         )
 
         self.assertEqual(credits_earned(plan), 0)
+
+    def test_scopes_to_a_single_block_when_given(self):
+        institution, plan = make_program_and_plan()
+        from curriculum.models import Block, BlockEntry
+
+        a = Block.objects.create(plan=plan, name="A", credits=4)
+        b = Block.objects.create(plan=plan, name="B", credits=3)
+        in_a = make_course(institution, "101", credits=4)
+        in_b = make_course(institution, "102", credits=3)
+        BlockEntry.objects.create(block=a, course=in_a, credits=4)
+        BlockEntry.objects.create(block=b, course=in_b, credits=3)
+        CourseStatus.objects.create(course=in_a, status=Status.PASSED)
+        CourseStatus.objects.create(course=in_b, status=Status.PASSED)
+
+        self.assertEqual(credits_earned(plan, block=a), 4)
+        self.assertEqual(credits_earned(plan, block=b), 3)
+        self.assertEqual(credits_earned(plan), 7)
+
+
+class OpensNextTermTests(TestCase):
+    """The projection #11 adds: what unlocks if this term's Enrollments pass."""
+
+    def test_course_gated_only_by_an_in_progress_course_opens_next_term(self):
+        institution, plan = make_program_and_plan()
+        req = make_course(institution, "03071")
+        target = make_course(institution, "00823")
+        Prerequisite.objects.create(plan=plan, course=target, requires_course=req)
+        CourseStatus.objects.create(course=req, status=Status.IN_PROGRESS)
+
+        self.assertFalse(is_unlocked(target, plan))
+        self.assertTrue(opens_next_term(target, plan))
+
+    def test_already_unlocked_course_does_not_also_open_next_term(self):
+        institution, plan = make_program_and_plan()
+        req = make_course(institution, "03071")
+        target = make_course(institution, "00823")
+        Prerequisite.objects.create(plan=plan, course=target, requires_course=req)
+        CourseStatus.objects.create(course=req, status=Status.PASSED)
+
+        self.assertTrue(is_unlocked(target, plan))
+        self.assertFalse(opens_next_term(target, plan))
+
+    def test_course_still_gated_by_a_pending_course_does_not_open_next_term(self):
+        institution, plan = make_program_and_plan()
+        in_progress = make_course(institution, "03071")
+        pending = make_course(institution, "03069")
+        target = make_course(institution, "00831")
+        Prerequisite.objects.create(plan=plan, course=target, requires_course=in_progress)
+        Prerequisite.objects.create(plan=plan, course=target, requires_course=pending)
+        CourseStatus.objects.create(course=in_progress, status=Status.IN_PROGRESS)
+
+        self.assertFalse(opens_next_term(target, plan))
+
+    def test_projection_is_not_transitive(self):
+        """An in-progress course two prerequisite hops away doesn't project:
+        the map reaches only as far as what's actually being studied.
+        """
+        institution, plan = make_program_and_plan()
+        in_progress = make_course(institution, "03068")
+        middle = make_course(institution, "03069")  # pending, requires in_progress
+        target = make_course(institution, "00831")  # requires middle
+        Prerequisite.objects.create(plan=plan, course=middle, requires_course=in_progress)
+        Prerequisite.objects.create(plan=plan, course=target, requires_course=middle)
+        CourseStatus.objects.create(course=in_progress, status=Status.IN_PROGRESS)
+
+        self.assertTrue(opens_next_term(middle, plan))
+        self.assertFalse(opens_next_term(target, plan))
+
+    def test_failing_the_in_progress_course_ends_the_projection(self):
+        institution, plan = make_program_and_plan()
+        req = make_course(institution, "03071")
+        target = make_course(institution, "00823")
+        Prerequisite.objects.create(plan=plan, course=target, requires_course=req)
+        status = CourseStatus.objects.create(course=req, status=Status.IN_PROGRESS)
+
+        self.assertTrue(opens_next_term(target, plan))
+
+        status.status = Status.FAILED
+        status.save()
+
+        self.assertFalse(opens_next_term(target, plan))
