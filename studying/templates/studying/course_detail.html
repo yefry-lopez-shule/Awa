@@ -17,6 +17,27 @@
 {% if enrollment %}
     <p>{% blocktrans with term=enrollment.term %}Enrolled this Term: {{ term }}{% endblocktrans %}</p>
 
+    {% if forecast %}
+    <section class="forecast">
+        <h2>{% trans "Pass forecast" %}</h2>
+        {% if forecast.grade_so_far is not None %}
+            <p>{% blocktrans with grade=forecast.grade_so_far|floatformat:'-2' %}Weighted grade so far: {{ grade }} — across the Graded Items scored to date only.{% endblocktrans %}</p>
+        {% endif %}
+        <p>{% blocktrans with weight=forecast.remaining_weight|floatformat:'-2' max=grade_scale_max %}Still ungraded: {{ weight }} of {{ max }} in weight.{% endblocktrans %}</p>
+        {% if forecast.verdict == 'needs' %}
+            <p>{% blocktrans with average=forecast.required_average|floatformat:'-2' %}You need an average of {{ average }} on everything still ungraded to reach the pass mark.{% endblocktrans %}</p>
+        {% elif forecast.verdict == 'secured' %}
+            <p>{% trans "Already at or above the pass mark — passing is secured even with weight still to come." %}</p>
+        {% elif forecast.verdict == 'passed' %}
+            <p>{% trans "Passed — every Graded Item is in and the weighted grade clears the pass mark." %}</p>
+        {% elif forecast.verdict == 'failed' %}
+            <p class="warning">{% trans "Not passed — every Graded Item is in and the weighted grade is below the pass mark." %}</p>
+        {% elif forecast.verdict == 'impossible' %}
+            <p class="warning">{% trans "Passing is no longer mathematically possible — even a perfect score on everything left falls short of the pass mark." %}</p>
+        {% endif %}
+    </section>
+    {% endif %}
+
     <h2>{% trans "Graded Items" %}</h2>
     <p class="weight-total">
         {% blocktrans with total=weight_total|floatformat:'-2' max=grade_scale_max %}

@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
 from curriculum.models import AppSettings, BlockEntry, Course
+from planning.forecast import forecast
 
 from .models import (
     CourseStatus,
@@ -169,6 +170,13 @@ def course_detail(request, course_id):
                 "weight_total": sum(item.weight for item in items),
             }
         )
+        # #4 leaves a Course with an active Enrollment but no Graded Items
+        # yet (its deadlines grid unfilled) out of scope for forecasting —
+        # there is nothing to forecast from.
+        if items:
+            context["forecast"] = forecast(
+                items, program.pass_mark, program.grade_scale_max
+            )
     if errors:
         context["errors"] = errors
     return render(request, "studying/course_detail.html", context)
