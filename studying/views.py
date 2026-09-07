@@ -7,10 +7,12 @@ import datetime
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from curriculum.models import AppSettings, BlockEntry, Course
 from planning.forecast import forecast
+from planning.recommendation import current_term
 
 from .models import (
     CourseStatus,
@@ -19,6 +21,7 @@ from .models import (
     GradedItem,
     Outcome,
     Status,
+    StudyLog,
     Term,
     status_for_course,
 )
@@ -57,6 +60,185 @@ def onboarding(request):
     if errors:
         context["errors"] = errors
     return render(request, "studying/onboarding.html", context)
+
+
+def quick_log(request):
+    """Quick log (#16, scope.md §5 screen 3): Course + hours + an optional
+    "left off" note. Reached in one tap from the dashboard banner with the
+    recommended Course pre-selected (`?course=<id>`), so the nightly path is
+    read the banner, study, log — no Course picker to work through.
+
+    The page also lists this Term's recent Study Logs, each editable in place
+    with a delete box: `studied_on` is what Hours Behind sums over the rolling
+    window, so a session recorded on the wrong day has to be fixable. Every
+    edit and deletion lands in the next ranking — nothing here is cached.
+
+    `recorded_at` is set once by the model and never shown for editing: it is
+    what the Streak and staleness measure, and a backdated `studied_on` must
+    not be able to repair either (ADR-0006).
+    """
+
+    plan = AppSettings.load().active_plan
+    term = current_term(plan)
+    if term is None:
+        return render(request, "studying/quick_log.html", {"term": None})
+
+    enrollments = list(
+        term.enrollments.filter(outcome=Outcome.IN_PROGRESS)
+        .select_related("course")
+        .order_by("course__code")
+    )
+
+    errors = []
+    if request.method == "POST":
+        errors = _save_study_logs(request, enrollments)
+        if not errors:
+            messages.success(request, _("Logged."))
+            return redirect("studying:quick_log")
+
+    logs = list(
+        StudyLog.objects.filter(enrollment__term=term)
+        .select_related("enrollment__course")[:20]
+    )
+
+    context = {
+        "term": term,
+        "enrollments": enrollments,
+        "logs": logs,
+        "preselected_course_id": request.GET.get("course", ""),
+        "today": timezone.localdate(),
+    }
+    if errors:
+        context["errors"] = errors
+    return render(request, "studying/quick_log.html", context)
+
+
+def _submitted_log_rows(request):
+    """Existing logs come back as `log_<id>_*`; the new session as `new_log_*`."""
+
+    rows = []
+    ids = set()
+    for key in request.POST:
+        if key.startswith("log_") and key.endswith("_hours"):
+            ids.add(key[len("log_") : -len("_hours")])
+    for log_id in ids:
+        prefix = f"log_{log_id}_"
+        rows.append(
+            {
+                "id": log_id,
+                "course_raw": None,  # an existing log's Course is not reassigned here
+                "hours_raw": request.POST.get(f"{prefix}hours", "").strip(),
+                "studied_raw": request.POST.get(f"{prefix}studied_on", "").strip(),
+                "note": request.POST.get(f"{prefix}note", "").strip(),
+                "delete": bool(request.POST.get(f"{prefix}delete")),
+            }
+        )
+    rows.append(
+        {
+            "id": None,
+            "course_raw": request.POST.get("new_log_course", "").strip(),
+            "hours_raw": request.POST.get("new_log_hours", "").strip(),
+            "studied_raw": request.POST.get("new_log_studied_on", "").strip(),
+            "note": request.POST.get("new_log_note", "").strip(),
+            "delete": False,
+        }
+    )
+    return rows
+
+
+def _save_study_logs(request, enrollments):
+    """Reconcile the submitted rows against this Term's Study Logs. Nothing is
+    written unless the whole submission is valid (the Course detail grid rule).
+    """
+
+    enrollment_by_course = {str(e.course_id): e for e in enrollments}
+    rows = _submitted_log_rows(request)
+    log_ids = {r["id"] for r in rows if r["id"]}
+    existing = {
+        str(log.id): log
+        for log in StudyLog.objects.filter(
+            id__in=log_ids, enrollment__in=enrollments
+        )
+    }
+
+    errors = []
+    to_create = []
+    to_update = []
+    to_delete = []
+
+    for row in rows:
+        if row["id"] is None:
+            if not any((row["course_raw"], row["hours_raw"], row["studied_raw"], row["note"])):
+                continue  # the new-session row left untouched
+            enrollment = enrollment_by_course.get(row["course_raw"])
+            if enrollment is None:
+                errors.append(_("Choose a Course you are enrolled in this Term."))
+                continue
+            if not row["studied_raw"]:
+                row["studied_raw"] = timezone.localdate().isoformat()  # defaults to today
+        else:
+            log = existing.get(row["id"])
+            if log is None:
+                continue  # a row for a log that is not this Term's — ignore
+            if row["delete"]:
+                to_delete.append(log)
+                continue
+            enrollment = log.enrollment
+
+        hours = _parse_hours(row["hours_raw"], errors)
+        studied_on = _parse_studied_on(row["studied_raw"], errors)
+        if hours is None or studied_on is None:
+            continue
+
+        if row["id"] is None:
+            to_create.append(
+                StudyLog(
+                    enrollment=enrollment,
+                    hours=hours,
+                    note=row["note"],
+                    studied_on=studied_on,
+                )
+            )
+        else:
+            log = existing[row["id"]]
+            log.hours = hours
+            log.studied_on = studied_on
+            log.note = row["note"]
+            to_update.append(log)
+
+    if errors:
+        return errors
+
+    with transaction.atomic():
+        for log in to_delete:
+            log.delete()
+        for log in to_update:
+            log.save(update_fields=["hours", "studied_on", "note"])
+        StudyLog.objects.bulk_create(to_create)
+    return []
+
+
+def _parse_hours(raw, errors):
+    try:
+        hours = float(raw)
+    except ValueError:
+        errors.append(_("Hours must be a number."))
+        return None
+    if hours <= 0:
+        errors.append(_("Hours must be greater than zero."))
+        return None
+    return hours
+
+
+def _parse_studied_on(raw, errors):
+    if not raw:
+        errors.append(_("A Study Log needs the date you studied."))
+        return None
+    try:
+        return datetime.date.fromisoformat(raw)
+    except ValueError:
+        errors.append(_("The date studied must be a valid date."))
+        return None
 
 
 def degree_map(request):

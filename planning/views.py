@@ -15,11 +15,15 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from curriculum.models import AppSettings
+from studying.models import Enrollment, Outcome
 
 from .capacity import capacity_hours, course_targets, hours_left_in_todays_window, overload
 from .models import AvailabilityBlock, StudyWindow, Weekday
 from .reasons import render_reason
-from .recommendation import current_term, todays_ranking
+from .recommendation import current_term, last_study_log, todays_ranking
+from .streak import current_streak
+
+RATION_BAR_WIDTH = 10
 
 
 def dashboard(request):
@@ -29,8 +33,11 @@ def dashboard(request):
 
     Past `stale_after_days` since the last Study Log the banner still names a
     Course but labels what it is standing on (scope.md §4 rule 2); with no
-    nudge in v1, that honest label is the whole defence. The Course cards
-    below the banner are #16.
+    nudge in v1, that honest label is the whole defence.
+
+    Below the banner, the Course cards render `rank()`'s full ordering — the
+    winning Course first, each card an hours-vs-Ration bar and its reason
+    (#16, scope.md §5 dashboard shape).
     """
 
     plan = AppSettings.load().active_plan
@@ -44,11 +51,20 @@ def dashboard(request):
     if ranking is not None and ranking.stale and ranking.days_since_last_log is not None:
         stale_since = now.date() - datetime.timedelta(days=ranking.days_since_last_log)
 
+    cards = _cards(term, ranking)
+    recommended_card = cards[0] if cards else None
+
     context = {
         "term": term,
         "ranking": ranking,
         "recommendation": recommendation,
         "reason_line": render_reason(recommendation.reason) if recommendation else None,
+        "cards": cards,
+        "recommended_course_id": recommended_card["course_id"] if recommended_card else None,
+        "last_session": (
+            last_study_log(term, recommendation.code) if recommendation else None
+        ),
+        "streak": current_streak(term, now.date()) if term is not None else 0,
         "now": now,
         "capacity": capacity_hours(),
         "hours_left_today": hours_left_in_todays_window(now),
@@ -59,6 +75,41 @@ def dashboard(request):
         "stale_since": stale_since,
     }
     return render(request, "planning/dashboard.html", context)
+
+
+def _ration_bar(logged, ration, width=RATION_BAR_WIDTH):
+    """`logged` against `ration` as a `width`-cell bar — the scope.md mock's
+    `██░░░░░░░░`. Runs against the Ration, never the Target: the shortfall the
+    Plan created stays visible instead of being scaled away (ADR-0007).
+    """
+
+    filled = round(width * logged / ration) if ration > 0 else 0
+    filled = max(0, min(width, filled))
+    return "█" * filled + "░" * (width - filled)
+
+
+def _cards(term, ranking):
+    """One card per ranked Course, in `rank()`'s order. Each pairs the
+    `RankedCourse` with the id of its Course (so the card links to Course
+    detail and the banner to a pre-filled quick log) and its rendered reason.
+    """
+
+    if ranking is None:
+        return []
+
+    course_ids = dict(
+        Enrollment.objects.filter(term=term, outcome=Outcome.IN_PROGRESS)
+        .values_list("course__code", "course_id")
+    )
+    return [
+        {
+            "course": c,
+            "course_id": course_ids.get(c.code),
+            "reason_line": render_reason(c.reason),
+            "bar": _ration_bar(c.hours_logged_7d, c.ration),
+        }
+        for c in ranking.courses
+    ]
 
 
 def availability_template(request):

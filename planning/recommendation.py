@@ -103,3 +103,21 @@ def todays_ranking(term, now=None):
     if not snapshot.courses:
         return None
     return rank(snapshot, ScoringConfig.load(), now)
+
+
+def last_study_log(term, course_code):
+    """The most recent Study Log for one Course this Term — what the banner
+    hands back as "where you left off" (the `StudyLog.note`, scope.md §5
+    dashboard mock). None when the Course has never been logged.
+
+    `StudyLog.Meta.ordering` is `-studied_on, -recorded_at`, so `.first()` is
+    the latest session by the date it happened.
+    """
+
+    return (
+        StudyLog.objects.filter(
+            enrollment__term=term, enrollment__course__code=course_code
+        )
+        .select_related("enrollment__course")
+        .first()
+    )
