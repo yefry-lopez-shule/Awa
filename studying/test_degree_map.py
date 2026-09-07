@@ -177,7 +177,9 @@ class DegreeMapSlotTests(TestCase):
     def test_unfilled_slot_renders_as_outstanding_with_its_credits(self):
         ctx = build_map_plan()
 
-        response = self.client.get(reverse("studying:degree_map"))
+        response = self.client.get(
+            reverse("studying:degree_map"), headers={"accept-language": "en"}
+        )
 
         row = rows_by_entry(response)[ctx["slot"].id]
         self.assertTrue(row["is_slot"])
