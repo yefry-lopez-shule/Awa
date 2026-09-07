@@ -108,6 +108,55 @@ class CourseDetailGridRenderTests(TestCase):
         self.assertContains(response, "88")
 
 
+class CourseDetailForecastTests(TestCase):
+    """#14: the live forecast for an active Enrollment; Status + final_grade
+    and no forecast section for a historical-only Course.
+    """
+
+    def test_active_enrollment_shows_the_live_forecast(self):
+        ctx = build_enrollment()
+        GradedItem.objects.create(
+            enrollment=ctx["enrollment"], type="parcial", weight=40, grade=80
+        )
+        GradedItem.objects.create(enrollment=ctx["enrollment"], type="final", weight=60)
+
+        response = self.client.get(
+            reverse("studying:course_detail", args=[ctx["course"].id]),
+            headers={"accept-language": "en"},
+        )
+
+        forecast = response.context["forecast"]
+        self.assertEqual(forecast.weighted_so_far, 32)  # 80 × 40 / 100
+        self.assertEqual(forecast.remaining_weight, 60)
+        self.assertAlmostEqual(forecast.required_average, (70 - 32) / 60 * 100)
+        self.assertContains(response, "Pass forecast")
+
+    def test_enrollment_with_no_graded_items_yet_shows_no_forecast(self):
+        ctx = build_enrollment()
+
+        response = self.client.get(
+            reverse("studying:course_detail", args=[ctx["course"].id])
+        )
+
+        self.assertNotIn("forecast", response.context)
+
+    def test_historical_only_course_shows_status_and_final_grade_no_forecast(self):
+        ctx = build_enrollment()
+        ctx["enrollment"].delete()
+        CourseStatus.objects.create(
+            course=ctx["course"], status=Status.PASSED, final_grade=91
+        )
+
+        response = self.client.get(
+            reverse("studying:course_detail", args=[ctx["course"].id]),
+            headers={"accept-language": "en"},
+        )
+
+        self.assertNotIn("forecast", response.context)
+        self.assertNotContains(response, "Pass forecast")
+        self.assertContains(response, "91")
+
+
 class CourseDetailGridWriteTests(TestCase):
     def post(self, ctx, data):
         return self.client.post(
