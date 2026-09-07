@@ -113,6 +113,7 @@ class Reason:
 class RankedCourse:
     code: str
     name: str
+    credits: float
     difficulty: str
     target: float
     ration: float
@@ -305,6 +306,7 @@ def _to_ranked(w, *, tier, today):
     return RankedCourse(
         code=w.course.code,
         name=w.course.name,
+        credits=w.course.credits,
         difficulty=w.course.difficulty,
         target=w.target,
         ration=w.ration,

@@ -16,10 +16,26 @@
         {% blocktrans with day=now|date:"D" free=hours_left_today|floatformat:'-1' logged=logged_7d|floatformat:'-1' capacity=capacity|floatformat:'-1' demand=overload.demand|floatformat:'-1' %}{{ day }} · {{ free }}h free tonight · last 7d {{ logged }}/{{ capacity }}h · plan wants {{ demand }}h{% endblocktrans %}
     </p>
 
+    <p class="streak">
+        {% blocktrans count days=streak %}Streak: {{ days }} day{% plural %}Streak: {{ days }} days{% endblocktrans %}
+    </p>
+
     <p class="recommendation">
         {% blocktrans with course=recommendation.name hours=recommendation.committed_hours|floatformat:'-1' %}TONIGHT → {{ course }} · {{ hours }}h{% endblocktrans %}
     </p>
     <p class="reason">{{ reason_line }}</p>
+
+    {% if last_session.note %}
+        <p class="left-off">
+            {% blocktrans with when=last_session.studied_on|date:"D j M" hours=last_session.hours|floatformat:'-1' note=last_session.note %}last session ({{ when }}, {{ hours }}h): “{{ note }}”{% endblocktrans %}
+        </p>
+    {% endif %}
+
+    {% if recommended_course_id %}
+        <p class="log-cta">
+            <a href="{% url 'studying:quick_log' %}?course={{ recommended_course_id }}">{% trans "Log tonight’s session →" %}</a>
+        </p>
+    {% endif %}
 
     {% if ranking.stale %}
         <p class="warning stale">
@@ -37,5 +53,27 @@
         {% blocktrans with demand=overload.demand|floatformat:'-1' capacity=overload.capacity|floatformat:'-1' %}The Plan wants {{ demand }}h a week and you have {{ capacity }}h. Rations are scaled to fit.{% endblocktrans %}
     </p>
 {% endif %}
+
+<section class="cards">
+    <h2>{% trans "Courses, in order" %}</h2>
+    {% for card in cards %}
+        <div class="card">
+            <p class="card-title">
+                {% if card.course_id %}
+                    <a href="{% url 'studying:course_detail' card.course_id %}">{{ card.course.name }}</a>
+                {% else %}
+                    {{ card.course.name }}
+                {% endif %}
+                · {{ card.course.credits|floatformat:'-2' }}cr{% if card.course.difficulty != "normal" %} · {{ card.course.difficulty }}{% endif %}
+            </p>
+            <p class="card-bar">
+                {{ card.course.hours_logged_7d|floatformat:'-1' }}/{{ card.course.ration|floatformat:'-1' }}h
+                <span class="bar">{{ card.bar }}</span>
+                {% if card.course.score is None %}—{% else %}{{ card.course.score|floatformat:'-1' }}{% endif %}
+                · {{ card.reason_line }}
+            </p>
+        </div>
+    {% endfor %}
+</section>
 {% endif %}
 {% endblock %}

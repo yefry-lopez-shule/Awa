@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Quick log" %} — Awá{% endblock %}
+
+{% block content %}
+<h1>{% trans "Quick log" %}</h1>
+
+{% if not term %}
+    <p>{% trans "No Term is open yet. Mark a Course in progress on the onboarding checklist first." %}</p>
+{% else %}
+
+{% if errors %}
+    <div class="errors">
+        <ul>
+            {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+
+    <h2>{% trans "Log a session" %}</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>{% trans "Course" %}</th>
+                <th>{% trans "Hours" %}</th>
+                <th>{% trans "Date studied" %}</th>
+                <th>{% trans "Left off" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <select name="new_log_course">
+                        <option value="">—</option>
+                        {% for enrollment in enrollments %}
+                            <option value="{{ enrollment.course_id }}" {% if preselected_course_id == enrollment.course_id|stringformat:"s" %}selected{% endif %}>{{ enrollment.course.code }} — {{ enrollment.course.name }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td><input type="number" step="any" min="0" name="new_log_hours"></td>
+                <td><input type="date" name="new_log_studied_on" value="{{ today|date:'Y-m-d' }}"></td>
+                <td><input type="text" maxlength="500" name="new_log_note"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    {% if logs %}
+        <h2>{% trans "Recent sessions" %}</h2>
+        <p>{% trans "The date studied is what Hours Behind sums over the last seven days; fix it here if a session was recorded on the wrong day. The date recorded, which the Streak counts, cannot be changed." %}</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>{% trans "Course" %}</th>
+                    <th>{% trans "Hours" %}</th>
+                    <th>{% trans "Date studied" %}</th>
+                    <th>{% trans "Recorded" %}</th>
+                    <th>{% trans "Left off" %}</th>
+                    <th>{% trans "Delete" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                    <tr>
+                        <td>{{ log.enrollment.course.code }} — {{ log.enrollment.course.name }}</td>
+                        <td><input type="number" step="any" min="0" name="log_{{ log.id }}_hours" value="{{ log.hours|floatformat:'-2' }}"></td>
+                        <td><input type="date" name="log_{{ log.id }}_studied_on" value="{{ log.studied_on|date:'Y-m-d' }}"></td>
+                        <td>{{ log.recorded_at|date:"j M Y" }}</td>
+                        <td><input type="text" maxlength="500" name="log_{{ log.id }}_note" value="{{ log.note }}"></td>
+                        <td><input type="checkbox" name="log_{{ log.id }}_delete"></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <button type="submit">{% trans "Save" %}</button>
+</form>
+{% endif %}
+{% endblock %}

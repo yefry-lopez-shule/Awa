@@ -158,3 +158,97 @@ class StalenessTests(TestCase):
 
         self.assertTrue(response.context["ranking"].stale)
         self.assertContains(response, "Nothing logged yet")
+
+
+class CourseCardTests(TestCase):
+    def test_cards_render_in_ranks_order_with_the_banner_course_first(self):
+        institution, program, _ = activate_plan()
+        term = open_term(program)
+        a_study_window_for_today()
+        today = timezone.localdate()
+
+        behind = enrol(term, institution, "BEHIND")  # 0 logged → biggest deficit
+        on_ration = enrol(term, institution, "ONRATION")
+        StudyLog.objects.create(enrollment=on_ration, hours=12.0, studied_on=today)
+        ahead = enrol(term, institution, "AHEAD")
+        StudyLog.objects.create(enrollment=ahead, hours=40.0, studied_on=today)
+
+        response = self.client.get(reverse("planning:dashboard"), headers=EN)
+
+        ranking_order = [c.code for c in response.context["ranking"].courses]
+        card_order = [c["course"].code for c in response.context["cards"]]
+        self.assertEqual(card_order, ranking_order)
+        self.assertEqual(card_order[0], response.context["recommendation"].code)
+        self.assertEqual(card_order[0], "BEHIND")
+
+    def test_a_card_carries_a_ration_bar_a_course_link_and_a_reason(self):
+        institution, program, _ = activate_plan()
+        term = open_term(program)
+        a_study_window_for_today()
+        enrolment = enrol(term, institution, "AAA")
+        StudyLog.objects.create(
+            enrollment=enrolment, hours=2.0, studied_on=timezone.localdate()
+        )
+
+        response = self.client.get(reverse("planning:dashboard"), headers=EN)
+
+        card = response.context["cards"][0]
+        self.assertEqual(card["course_id"], enrolment.course_id)
+        self.assertEqual(set(card["bar"]), {"█", "░"})
+        self.assertTrue(card["reason_line"])
+        self.assertContains(response, "2/12h")  # logged vs Ration
+        self.assertContains(
+            response,
+            reverse("studying:course_detail", args=[enrolment.course_id]),
+        )
+
+    def test_the_override_course_shows_no_score_on_its_card(self):
+        institution, program, _ = activate_plan()
+        term = open_term(program)
+        a_study_window_for_today()
+        due_soon = enrol(term, institution, "DUESOON")
+        StudyLog.objects.create(
+            enrollment=due_soon, hours=12.0, studied_on=timezone.localdate()
+        )
+        GradedItem.objects.create(
+            enrollment=due_soon,
+            type="parcial",
+            weight=40,
+            due_at=timezone.localdate() + datetime.timedelta(days=1),
+        )
+
+        response = self.client.get(reverse("planning:dashboard"), headers=EN)
+
+        self.assertIsNone(response.context["cards"][0]["course"].score)
+
+
+class StreakBannerTests(TestCase):
+    def test_the_banner_shows_the_current_streak(self):
+        institution, program, _ = activate_plan()
+        term = open_term(program)
+        a_study_window_for_today()
+        enrolment = enrol(term, institution, "AAA")
+        StudyLog.objects.create(
+            enrollment=enrolment, hours=2.0, studied_on=timezone.localdate()
+        )
+
+        response = self.client.get(reverse("planning:dashboard"), headers=EN)
+
+        self.assertEqual(response.context["streak"], 1)
+        self.assertContains(response, "Streak: 1 day")
+
+    def test_the_left_off_note_from_the_last_session_is_handed_back(self):
+        institution, program, _ = activate_plan()
+        term = open_term(program)
+        a_study_window_for_today()
+        enrolment = enrol(term, institution, "AAA")
+        StudyLog.objects.create(
+            enrollment=enrolment,
+            hours=1.5,
+            studied_on=timezone.localdate(),
+            note="falta el diagrama ER",
+        )
+
+        response = self.client.get(reverse("planning:dashboard"), headers=EN)
+
+        self.assertContains(response, "falta el diagrama ER")
