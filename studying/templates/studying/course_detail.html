@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ course.code }} — Awá{% endblock %}
+
+{% block content %}
+<h1>{{ course.code }} — {{ course.name }}</h1>
+
+{% if errors %}
+    <div class="errors">
+        <ul>
+            {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+{% if enrollment %}
+    <p>{% blocktrans with term=enrollment.term %}Enrolled this Term: {{ term }}{% endblocktrans %}</p>
+
+    <h2>{% trans "Graded Items" %}</h2>
+    <p class="weight-total">
+        {% blocktrans with total=weight_total|floatformat:'-2' max=grade_scale_max %}
+        Weights: {{ total }} of {{ max }}
+        {% endblocktrans %}
+    </p>
+    <p>{% trans "Type the dates off the orientación académica. Weights must add up to the grade scale before the grid will save. Enter a grade whenever one arrives." %}</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <table>
+            <thead>
+                <tr>
+                    <th>{% trans "Type" %}</th>
+                    <th>{% trans "Weight" %}</th>
+                    <th>{% trans "Due" %}</th>
+                    <th>{% trans "Grade" %}</th>
+                    <th>{% trans "Remove" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                    <tr>
+                        <td>
+                            <select name="item_{{ item.id }}_type">
+                                {% for t in item_types %}
+                                    <option value="{{ t }}" {% if t == item.type %}selected{% endif %}>{{ t }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="number" step="any" min="0" name="item_{{ item.id }}_weight" value="{{ item.weight|floatformat:'-2' }}"></td>
+                        <td><input type="date" name="item_{{ item.id }}_due" value="{{ item.due_at|date:'Y-m-d' }}"></td>
+                        <td><input type="number" step="any" name="item_{{ item.id }}_grade" value="{% if item.grade is not None %}{{ item.grade|floatformat:'-2' }}{% endif %}"></td>
+                        <td><input type="checkbox" name="item_{{ item.id }}_delete"></td>
+                    </tr>
+                {% endfor %}
+                <tr>
+                    <td>
+                        <select name="new_item_type">
+                            <option value="">—</option>
+                            {% for t in item_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                        </select>
+                    </td>
+                    <td><input type="number" step="any" min="0" name="new_item_weight"></td>
+                    <td><input type="date" name="new_item_due"></td>
+                    <td><input type="number" step="any" name="new_item_grade"></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+        <button type="submit">{% trans "Save" %}</button>
+    </form>
+{% else %}
+    <p>{% blocktrans with status=status.label %}Status: {{ status }}{% endblocktrans %}</p>
+    {% if final_grade is not None %}
+        <p>{% blocktrans with grade=final_grade|floatformat:'-2' %}Final grade: {{ grade }}{% endblocktrans %}</p>
+    {% endif %}
+    <p>{% trans "No active Enrollment — Graded Items are entered against an Enrollment." %}</p>
+{% endif %}
+{% endblock %}

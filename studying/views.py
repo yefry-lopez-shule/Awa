@@ -6,12 +6,21 @@ import datetime
 
 from django.contrib import messages
 from django.db import transaction
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 
 from curriculum.models import AppSettings, BlockEntry, Course
 
-from .models import CourseStatus, Difficulty, Enrollment, Outcome, Status, Term, status_for_course
+from .models import (
+    CourseStatus,
+    Difficulty,
+    Enrollment,
+    GradedItem,
+    Outcome,
+    Status,
+    Term,
+    status_for_course,
+)
 from .queries import credits_earned, is_unlocked, opens_next_term
 
 
@@ -111,6 +120,179 @@ def degree_map(request):
         "credits_required": credits_required,
     }
     return render(request, "studying/degree_map.html", context)
+
+
+def course_detail(request, course_id):
+    """Course detail (#13, scope.md §4 screen 4).
+
+    Keyed on a Course. When the student has an active Enrollment for it, the
+    page is an inline grid to add, edit, and remove that Enrollment's Graded
+    Items — type, weight, due date, and a grade entered whenever it arrives.
+    Otherwise it shows only the historical Status and final_grade (#14 grows
+    the live forecast into that same space).
+    """
+
+    course = get_object_or_404(Course, pk=course_id)
+    enrollment = (
+        Enrollment.objects.filter(course=course, outcome=Outcome.IN_PROGRESS)
+        .select_related("term__program")
+        .order_by("-term__start_date")
+        .first()
+    )
+
+    try:
+        final_grade = course.status_record.final_grade
+    except CourseStatus.DoesNotExist:
+        final_grade = None
+
+    errors = []
+    if request.method == "POST" and enrollment is not None:
+        errors = _save_graded_items(request, enrollment)
+        if not errors:
+            messages.success(request, _("Saved."))
+            return redirect("studying:course_detail", course_id=course.id)
+
+    context = {
+        "course": course,
+        "enrollment": enrollment,
+        "status": status_for_course(course),
+        "final_grade": final_grade,
+    }
+    if enrollment is not None:
+        program = enrollment.term.program
+        items = list(enrollment.graded_items.order_by("due_at", "id"))
+        context.update(
+            {
+                "items": items,
+                "item_types": program.item_types,
+                "grade_scale_max": program.grade_scale_max,
+                "weight_total": sum(item.weight for item in items),
+            }
+        )
+    if errors:
+        context["errors"] = errors
+    return render(request, "studying/course_detail.html", context)
+
+
+def _submitted_item_rows(request):
+    """Existing items come back as `item_<id>_*`; a fresh one as `new_item_*`.
+    An unchanged row round-trips its id so its identity (and any grade already
+    on it) survives the save.
+    """
+
+    rows = []
+    ids = set()
+    for key in request.POST:
+        if key.startswith("item_") and key.endswith("_type"):
+            ids.add(key[len("item_") : -len("_type")])
+    for item_id in ids:
+        prefix = f"item_{item_id}_"
+        rows.append(
+            {
+                "id": item_id,
+                "type": request.POST.get(f"{prefix}type", "").strip(),
+                "weight_raw": request.POST.get(f"{prefix}weight", "").strip(),
+                "due_raw": request.POST.get(f"{prefix}due", "").strip(),
+                "grade_raw": request.POST.get(f"{prefix}grade", "").strip(),
+                "delete": bool(request.POST.get(f"{prefix}delete")),
+            }
+        )
+    rows.append(
+        {
+            "id": None,
+            "type": request.POST.get("new_item_type", "").strip(),
+            "weight_raw": request.POST.get("new_item_weight", "").strip(),
+            "due_raw": request.POST.get("new_item_due", "").strip(),
+            "grade_raw": request.POST.get("new_item_grade", "").strip(),
+            "delete": False,
+        }
+    )
+    return rows
+
+
+def _save_graded_items(request, enrollment):
+    """Reconcile the submitted grid against the Enrollment's Graded Items.
+
+    Nothing is written unless the whole submission is valid, and — the rule
+    scope.md §5 step 4 exists for — a non-empty grid whose weights don't sum
+    to `grade_scale_max` is reported and not saved.
+    """
+
+    program = enrollment.term.program
+    valid_types = set(program.item_types)
+    errors = []
+    parsed = []
+
+    for row in _submitted_item_rows(request):
+        if row["delete"]:
+            continue
+        if not any((row["type"], row["weight_raw"], row["due_raw"], row["grade_raw"])):
+            continue  # An untouched new row.
+
+        if row["type"] not in valid_types:
+            errors.append(_("Choose an item type from the Program's list."))
+            continue
+
+        try:
+            weight = float(row["weight_raw"])
+        except ValueError:
+            errors.append(_("A weight must be a number."))
+            continue
+        if weight <= 0:
+            errors.append(_("A weight must be greater than zero."))
+            continue
+
+        due_at = None
+        if row["due_raw"]:
+            try:
+                due_at = datetime.date.fromisoformat(row["due_raw"])
+            except ValueError:
+                errors.append(_("A due date must be a valid date."))
+
+        grade = None
+        if row["grade_raw"]:
+            try:
+                grade = float(row["grade_raw"])
+            except ValueError:
+                errors.append(_("A grade must be a number."))
+            else:
+                if not 0 <= grade <= program.grade_scale_max:
+                    errors.append(
+                        _("A grade must be between 0 and %(max)s.")
+                        % {"max": program.grade_scale_max}
+                    )
+
+        parsed.append(
+            {"id": row["id"], "type": row["type"], "weight": weight, "due_at": due_at, "grade": grade}
+        )
+
+    if errors:
+        return errors
+
+    total = sum(p["weight"] for p in parsed)
+    if parsed and round(total - program.grade_scale_max, 6) != 0:
+        return [
+            _("Weights must sum to %(max)s; the current items sum to %(total)s.")
+            % {"max": program.grade_scale_max, "total": "{:g}".format(total)}
+        ]
+
+    submitted_ids = {p["id"] for p in parsed if p["id"]}
+    with transaction.atomic():
+        enrollment.graded_items.exclude(id__in=submitted_ids).delete()
+        for p in parsed:
+            if p["id"]:
+                GradedItem.objects.filter(id=p["id"], enrollment=enrollment).update(
+                    type=p["type"], weight=p["weight"], due_at=p["due_at"], grade=p["grade"]
+                )
+            else:
+                GradedItem.objects.create(
+                    enrollment=enrollment,
+                    type=p["type"],
+                    weight=p["weight"],
+                    due_at=p["due_at"],
+                    grade=p["grade"],
+                )
+    return []
 
 
 def _build_rows(entries, plan):
