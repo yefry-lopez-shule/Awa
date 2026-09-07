@@ -21,5 +21,6 @@ from django.urls import include, path
 urlpatterns = [
     path("", include("studying.urls")),
     path("", include("planning.urls")),
+    path("", include("reference.urls")),
     # Wired up as each app's views land (#1-#6).
 ]

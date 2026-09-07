@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Roadmap" %} — Awá{% endblock %}
+
+{% block content %}
+<h1>{% trans "Self-study roadmap" %}</h1>
+<p class="projection">
+    {% trans "Reference only — these courses are never studied, scheduled, or recommended. Curated in the spreadsheet, imported with manage.py loadroadmap." %}
+</p>
+
+{% if not universities %}
+    <p>{% trans "No roadmap imported yet — load one with manage.py loadroadmap." %}</p>
+{% else %}
+    {% for university in universities %}
+        <h2>{{ university.name }}</h2>
+        {% for category in university.categories %}
+            <table>
+                <thead>
+                    <tr class="block-header">
+                        <td colspan="3">{{ category.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans "Course" %}</th>
+                        <th>{% trans "Coverage" %}</th>
+                        <th>{% trans "Corresponds to" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in category.entries %}
+                        <tr>
+                            <td>
+                                {{ row.entry.code }} — {{ row.entry.name }}
+                                {% if row.entry.official_link or row.entry.video_link or row.entry.youtube_channel or row.entry.textbook %}
+                                    <div class="projection">
+                                        {% if row.entry.official_link %}<a href="{{ row.entry.official_link }}">{% trans "official" %}</a> {% endif %}
+                                        {% if row.entry.video_link %}<a href="{{ row.entry.video_link }}">{% trans "video" %}</a> {% endif %}
+                                        {% if row.entry.youtube_channel %}{% trans "YouTube" %}: {{ row.entry.youtube_channel }} {% endif %}
+                                        {% if row.entry.textbook %}{% trans "Textbook" %}: {{ row.entry.textbook }}{% endif %}
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row.coverage == "all" %}
+                                    <span class="unlocked">{% trans "All covered" %}</span>
+                                {% elif row.coverage == "partial" %}
+                                    <span class="warning">{% trans "Partially covered" %}</span>
+                                {% else %}
+                                    <span class="projection">{% trans "Not covered by this Plan" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% for link_row in row.links %}
+                                    <div>
+                                        {% if link_row.link.course %}
+                                            {{ link_row.link.course.code }} — {{ link_row.link.course.name }}
+                                        {% endif %}
+                                        {% if link_row.satisfied %}
+                                            <span class="unlocked">{{ link_row.status.label }}</span>
+                                        {% else %}
+                                            <span class="projection">{{ link_row.status.label }}</span>
+                                        {% endif %}
+                                        {% if link_row.frozen %}<span class="projection">({% trans "frozen at import" %})</span>{% endif %}
+                                        {% if link_row.link.note %}<br><span class="projection">{{ link_row.link.note }}</span>{% endif %}
+                                    </div>
+                                {% empty %}
+                                    <span class="projection">{% trans "nothing on the UNED side" %}</span>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    {% endfor %}
+{% endif %}
+{% endblock %}

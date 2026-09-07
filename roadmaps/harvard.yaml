@@ -1,0 +1,30 @@
+# Harvard — self-study roadmap slice
+#
+# Source: Idea/CS_Bachelor_Roadmaps_Harvard_Stanford_MIT_Caltech_v2.xlsx, Harvard sheet.
+# One university per file. Loaded with:
+#   manage.py loadroadmap roadmaps/harvard.yaml
+#
+# A Coverage Link either names a `course` código that exists in the active
+# Plan's catalog, or carries a frozen `status` and no Course at all (the
+# prior Física degree's convalidaciones — ADR-0012).
+
+university: Harvard
+
+entries:
+  - code: CS 50
+    name: Introduction to Computer Science
+    category: Programming
+    official_link: https://cs50.harvard.edu/x/
+    youtube_channel: CS50
+    links:
+      - course: "03071"
+        note: Covers the propositional-logic half.
+      - course: "00831"
+        note: Covers the programming half.
+
+  - code: MATH 21a
+    name: Multivariable Calculus
+    category: Mathematics
+    links:
+      - status: transferred
+        note: "Completado — título en Física: Cálculo III"
