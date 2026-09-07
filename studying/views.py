@@ -15,6 +15,7 @@ from planning.forecast import forecast
 from planning.recommendation import current_term
 
 from .models import (
+    STATUSES_COUNTING_CREDITS,
     CourseStatus,
     Difficulty,
     Enrollment,
@@ -617,3 +618,307 @@ def _process_onboarding_submission(request, plan, entries):
                 )
 
     return []
+
+
+# ---------------------------------------------------------------------------
+# Cuatrimestre setup (#17, scope.md §5 screen 5)
+# ---------------------------------------------------------------------------
+
+DEADLINE_EXTRA_ROWS = 2
+
+
+def cuatrimestre_setup(request):
+    """The recurring Cuatrimestre setup flow (#17, scope.md §5 screen 5).
+
+    Step one gates the rest: while the most recent Term still has an
+    in-progress Enrollment, the page shows only term closeout — each closing
+    Enrollment with an Outcome derived from its weighted grade against
+    ``pass_mark`` (``forecast().weighted_so_far``), which the student confirms
+    or overrides. The Status that rides off that Outcome is never written
+    silently (ADR-0010), and closing a passing Course unlocks the
+    prerequisites it satisfies for the enrol list further down.
+
+    Once the last Term is closed (or none was ever opened) the page becomes
+    the new-Term form: dates, enrol + Difficulty ticked straight off the
+    seeded Plan with no typing, and a deadlines grid per enrolled Course
+    pre-filled from the Program's ``default_items`` — every row editable and
+    removable, new rows addable, weights validated to sum to
+    ``grade_scale_max`` exactly as the Course detail grid does.
+    """
+
+    plan = AppSettings.load().active_plan
+    if plan is None:
+        return render(request, "studying/cuatrimestre_setup.html", {"plan": None})
+
+    program = plan.program
+    last_term = Term.objects.filter(program=program).order_by("-start_date").first()
+    unclosed = (
+        list(
+            last_term.enrollments.filter(outcome=Outcome.IN_PROGRESS)
+            .select_related("course")
+            .prefetch_related("graded_items")
+            .order_by("course__code")
+        )
+        if last_term is not None
+        else []
+    )
+
+    if unclosed:
+        errors = []
+        if request.method == "POST":
+            errors = _close_last_term(request, unclosed, program)
+            if not errors:
+                messages.success(request, _("Last Term closed."))
+                return redirect("studying:cuatrimestre_setup")
+        context = {
+            "plan": plan,
+            "step": "closeout",
+            "last_term": last_term,
+            "closeout_rows": [_closeout_row(e, program) for e in unclosed],
+        }
+        if errors:
+            context["errors"] = errors
+        return render(request, "studying/cuatrimestre_setup.html", context)
+
+    eligible = _eligible_entries(plan)
+    errors = []
+    if request.method == "POST":
+        errors = _open_new_term(request, plan, eligible)
+        if not errors:
+            messages.success(request, _("Cuatrimestre set up."))
+            return redirect("planning:dashboard")
+
+    default_rows = list(program.default_items) + [{} for _ in range(DEADLINE_EXTRA_ROWS)]
+    context = {
+        "plan": plan,
+        "step": "new_term",
+        "last_term": last_term,
+        "item_types": program.item_types,
+        "grade_scale_max": program.grade_scale_max,
+        "enrol_rows": [
+            {
+                "course": entry.course,
+                "credits": entry.credits,
+                "deadline_rows": list(enumerate(default_rows)),
+            }
+            for entry in eligible
+        ],
+    }
+    if errors:
+        context["errors"] = errors
+    return render(request, "studying/cuatrimestre_setup.html", context)
+
+
+def _closeout_row(enrollment, program):
+    """One closing Enrollment: its weighted grade so far and the Outcome that
+    derives from it against ``pass_mark`` (scope.md §5 step 1).
+    """
+
+    fc = forecast(
+        list(enrollment.graded_items.all()), program.pass_mark, program.grade_scale_max
+    )
+    derived = (
+        Outcome.PASSED if fc.weighted_so_far >= program.pass_mark else Outcome.FAILED
+    )
+    return {
+        "enrollment": enrollment,
+        "course": enrollment.course,
+        "weighted_so_far": fc.weighted_so_far,
+        "grade_so_far": fc.grade_so_far,
+        "derived": derived,
+    }
+
+
+def _close_last_term(request, unclosed, program):
+    """Write each closing Enrollment's Outcome and update its Course's Status
+    from it. Confirmation is the whole point — a submitted Outcome, derived or
+    overridden, is what gets written; nothing is silent (ADR-0010).
+    """
+
+    parsed = []
+    errors = []
+    for enrollment in unclosed:
+        raw = request.POST.get(f"outcome_{enrollment.id}", "").strip()
+        try:
+            outcome = Outcome(raw)
+        except ValueError:
+            errors.append(_("Choose passed or failed for every closing Course."))
+            continue
+        if outcome == Outcome.IN_PROGRESS:
+            errors.append(_("A closing Course is either passed or failed."))
+            continue
+        parsed.append((enrollment, outcome))
+
+    if errors:
+        return errors
+
+    with transaction.atomic():
+        for enrollment, outcome in parsed:
+            enrollment.outcome = outcome
+            enrollment.save(update_fields=["outcome"])
+            fc = forecast(
+                list(enrollment.graded_items.all()),
+                program.pass_mark,
+                program.grade_scale_max,
+            )
+            CourseStatus.objects.update_or_create(
+                course=enrollment.course,
+                defaults={
+                    "status": Status.PASSED if outcome == Outcome.PASSED else Status.FAILED,
+                    # The weighted grade rides along as the historical grade so
+                    # it survives the Enrollment leaving the live forecast.
+                    "final_grade": (
+                        fc.weighted_so_far if fc.grade_so_far is not None else None
+                    ),
+                },
+            )
+    return []
+
+
+def _eligible_entries(plan):
+    """Named BlockEntries the student could enrol in this Term: Course not
+    already passed or transferred, and every prerequisite in the Plan
+    satisfied. A failed Course reappears here — a retake is a fresh Enrollment
+    (ADR-0010).
+    """
+
+    entries = (
+        BlockEntry.objects.filter(block__plan=plan, course__isnull=False)
+        .select_related("course", "course__status_record", "block")
+        .order_by("block__name", "course__code")
+    )
+    return [
+        entry
+        for entry in entries
+        if status_for_course(entry.course) not in STATUSES_COUNTING_CREDITS
+        and is_unlocked(entry.course, plan)
+    ]
+
+
+def _open_new_term(request, plan, eligible):
+    """Create the new Term, its Enrollments (with Difficulty) and each one's
+    Graded Items from the submitted deadlines grid. All-or-nothing: one bad
+    weight sum and nothing is written (scope.md §5 step 4).
+    """
+
+    program = plan.program
+    errors = []
+
+    start = _parse_term_date(request.POST.get("term_start", "").strip(), errors, _("a start date"))
+    end = _parse_term_date(request.POST.get("term_end", "").strip(), errors, _("an end date"))
+    if start is not None and end is not None and start >= end:
+        errors.append(_("The Term's start date must come before its end date."))
+
+    enrolments = []
+    for entry in eligible:
+        course = entry.course
+        if not request.POST.get(f"enrol_{course.id}"):
+            continue
+        try:
+            difficulty = Difficulty(
+                request.POST.get(f"difficulty_{course.id}", Difficulty.NORMAL)
+            )
+        except ValueError:
+            difficulty = Difficulty.NORMAL
+        items = _parse_deadline_grid(request, course, program, errors)
+        enrolments.append((course, difficulty, items))
+
+    if not enrolments:
+        errors.append(_("Tick at least one Course to enrol in."))
+
+    if errors:
+        return errors
+
+    with transaction.atomic():
+        term = Term.objects.create(program=program, start_date=start, end_date=end)
+        for course, difficulty, items in enrolments:
+            enrollment = Enrollment.objects.create(
+                term=term,
+                course=course,
+                outcome=Outcome.IN_PROGRESS,
+                difficulty=difficulty,
+            )
+            CourseStatus.objects.update_or_create(
+                course=course,
+                defaults={"status": Status.IN_PROGRESS, "final_grade": None},
+            )
+            GradedItem.objects.bulk_create(
+                GradedItem(
+                    enrollment=enrollment,
+                    type=item["type"],
+                    weight=item["weight"],
+                    due_at=item["due_at"],
+                )
+                for item in items
+            )
+    return []
+
+
+def _parse_term_date(raw, errors, label):
+    if not raw:
+        errors.append(_("The Term needs %(label)s.") % {"label": label})
+        return None
+    try:
+        return datetime.date.fromisoformat(raw)
+    except ValueError:
+        errors.append(_("The Term's dates must be valid dates."))
+        return None
+
+
+def _parse_deadline_grid(request, course, program, errors):
+    """The deadlines grid for one enrolled Course: rows keyed
+    ``deadline_<course id>_<row>_*``. Same shape and the same weight rule as
+    the Course detail grid — a non-empty grid whose weights don't sum to
+    ``grade_scale_max`` is reported and the whole setup is refused.
+    """
+
+    valid_types = set(program.item_types)
+    prefix = f"deadline_{course.id}_"
+    row_keys = sorted(
+        key[len(prefix) : -len("_type")]
+        for key in request.POST
+        if key.startswith(prefix) and key.endswith("_type")
+    )
+
+    rows = []
+    for row in row_keys:
+        base = f"{prefix}{row}_"
+        if request.POST.get(f"{base}delete"):
+            continue
+        type_ = request.POST.get(f"{base}type", "").strip()
+        weight_raw = request.POST.get(f"{base}weight", "").strip()
+        due_raw = request.POST.get(f"{base}due", "").strip()
+        if not any((type_, weight_raw, due_raw)):
+            continue
+
+        if type_ not in valid_types:
+            errors.append(_("Choose an item type from the Program's list."))
+            continue
+        try:
+            weight = float(weight_raw)
+        except ValueError:
+            errors.append(_("A weight must be a number."))
+            continue
+        if weight <= 0:
+            errors.append(_("A weight must be greater than zero."))
+            continue
+        due_at = None
+        if due_raw:
+            try:
+                due_at = datetime.date.fromisoformat(due_raw)
+            except ValueError:
+                errors.append(_("A due date must be a valid date."))
+                continue
+        rows.append({"type": type_, "weight": weight, "due_at": due_at})
+
+    total = sum(row["weight"] for row in rows)
+    if rows and round(total - program.grade_scale_max, 6) != 0:
+        errors.append(
+            _("Weights for %(code)s must sum to %(max)s; they sum to %(total)s.")
+            % {
+                "code": course.code,
+                "max": program.grade_scale_max,
+                "total": "{:g}".format(total),
+            }
+        )
+    return rows

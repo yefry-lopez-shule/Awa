@@ -7,6 +7,7 @@ app_name = "studying"
 urlpatterns = [
     path("onboarding/", views.onboarding, name="onboarding"),
     path("log/", views.quick_log, name="quick_log"),
+    path("setup/", views.cuatrimestre_setup, name="cuatrimestre_setup"),
     path("degree-map/", views.degree_map, name="degree_map"),
     path("course/<int:course_id>/", views.course_detail, name="course_detail"),
 ]
