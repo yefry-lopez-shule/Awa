@@ -1,0 +1,81 @@
+# UNED Diplomado en Ingeniería Informática — IIC-2026
+#
+# Source: Idea/UNED_STUDY_PLAN.png, as parsed in _docs/scope.md §2.
+# Loaded with: manage.py loadplan plans/uned/iic-diplomado-2026.yaml
+#
+# 5 Blocks, 78 créditos total, 19 named Courses, 4 humanities Slots.
+
+institution:
+  name: UNED
+  country: CR
+
+program:
+  name: Diplomado en Ingeniería Informática
+  code: IIC-2026
+  pass_mark: 70
+  hours_per_credit: 3.0
+  grade_scale_max: 100
+  term_type: cuatrimestre
+  term_weeks: 15
+  terms_per_year: 3
+  item_types: [tarea, quiz, parcial, final, proyecto]
+  default_items:
+    - { type: tarea, weight: 10 }
+    - { type: tarea, weight: 10 }
+    - { type: tarea, weight: 10 }
+    - { type: parcial, weight: 20 }
+    - { type: parcial, weight: 20 }
+    - { type: final, weight: 30 }
+
+plan:
+  name: IIC-2026
+
+blocks:
+  - name: A
+    credits: 16
+    courses:
+      - { code: '03304', credits: 4, name: Lógica Algorítmica }
+      - { code: '03068', credits: 3, name: Matemáticas para Computación I }
+      - { code: '00997', credits: 3, name: Inglés para Informática }
+      - { slot: humanidades, credits: 3, count: 2 }
+
+  - name: B
+    credits: 15
+    courses:
+      - { code: '04038', credits: 3, name: Principios de Administración }
+      - { code: '03071', credits: 3, name: Lógica para Computación, requires: ['03304'] }
+      - { code: '03069', credits: 3, name: Matemáticas para Computación II, requires: ['03068'] }
+      - { code: '03072', credits: 3, name: Inglés para Informática II, requires: ['00997'] }
+      - { slot: humanidades, credits: 3, count: 1 }
+
+  - name: C
+    credits: 16
+    courses:
+      - { code: '00831', credits: 4, name: Introducción a la Programación,
+          requires: ['03071', '03069', '03072'] }
+      - { code: '00823', credits: 4, name: Organización de Computadoras,
+          requires: ['03069', '03071'] }
+      - { code: '00226', credits: 4, name: Contabilidad I, requires: ['03068'] }
+      - { code: '04168', credits: 4, name: Estadística para Informática }
+
+  - name: D
+    credits: 17
+    courses:
+      - { code: '00824', credits: 4, name: Programación Intermedia, requires: ['00831'] }
+      - { code: '00826', credits: 3, name: Base de Datos, requires: ['00831'] }
+      - { code: '03306', credits: 4, name: Arquitectura de Computadores,
+          requires: ['00823', '00831'] }
+      - { code: '00883', credits: 3, name: Telemática y Redes,
+          requires: ['00823', '00824'] }
+      - { slot: humanidades, credits: 3, count: 1 }
+
+  - name: E
+    credits: 14
+    courses:
+      - { code: '00830', credits: 4, name: Programación Avanzada,
+          requires: ['00824', '00826'] }
+      - { code: '03300', credits: 4, name: Ingeniería del Software,
+          requires: ['00824', '00826'] }
+      - { code: '00825', credits: 3, name: Estructuras de Datos, requires: ['00824'] }
+      - { code: '00881', credits: 3, name: Sistemas Operativos,
+          requires: ['00824', '00823'] }
