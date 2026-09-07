@@ -1,8 +1,9 @@
-"""The availability template screen (#12, scope.md §5 screen 6).
+"""Planning's screens: the dashboard's Recommendation banner (#15, scope.md §5
+screen 2) and the availability template (#12, screen 6).
 
-A Study Window per weekday, the Availability Blocks subtracted from it, the
-Capacity that remains, and — when the Plan demands more hours than exist — the
-overload warning stating both numbers.
+The banner names one Course for tonight with committed hours and the reason it
+won; the availability template is a Study Window per weekday minus its
+Availability Blocks, the Capacity that remains, and the overload warning.
 """
 
 import datetime
@@ -10,19 +11,54 @@ import datetime
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from curriculum.models import AppSettings
-from studying.models import Term
 
-from .capacity import capacity_hours, course_targets, overload
+from .capacity import capacity_hours, course_targets, hours_left_in_todays_window, overload
 from .models import AvailabilityBlock, StudyWindow, Weekday
+from .reasons import render_reason
+from .recommendation import current_term, todays_ranking
 
 
-def _current_term(plan):
-    if plan is None:
-        return None
-    return Term.objects.filter(program=plan.program).order_by("-start_date").first()
+def dashboard(request):
+    """The home screen (scope.md §5 screen 2): the Recommendation banner —
+    the single Course for tonight, the hours it commits to, and the one line
+    of reasoning that won.
+
+    Past `stale_after_days` since the last Study Log the banner still names a
+    Course but labels what it is standing on (scope.md §4 rule 2); with no
+    nudge in v1, that honest label is the whole defence. The Course cards
+    below the banner are #16.
+    """
+
+    plan = AppSettings.load().active_plan
+    term = current_term(plan)
+    now = timezone.localtime()
+
+    ranking = todays_ranking(term, now) if term is not None else None
+    recommendation = ranking.recommendation if ranking is not None else None
+
+    stale_since = None
+    if ranking is not None and ranking.stale and ranking.days_since_last_log is not None:
+        stale_since = now.date() - datetime.timedelta(days=ranking.days_since_last_log)
+
+    context = {
+        "term": term,
+        "ranking": ranking,
+        "recommendation": recommendation,
+        "reason_line": render_reason(recommendation.reason) if recommendation else None,
+        "now": now,
+        "capacity": capacity_hours(),
+        "hours_left_today": hours_left_in_todays_window(now),
+        "logged_7d": (
+            sum(c.hours_logged_7d for c in ranking.courses) if ranking else 0.0
+        ),
+        "overload": overload(term),
+        "stale_since": stale_since,
+    }
+    return render(request, "planning/dashboard.html", context)
 
 
 def availability_template(request):
@@ -34,7 +70,7 @@ def availability_template(request):
     """
 
     plan = AppSettings.load().active_plan
-    term = _current_term(plan)
+    term = current_term(plan)
 
     errors = []
     if request.method == "POST":
