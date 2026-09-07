@@ -19,6 +19,10 @@ Including another URLconf
 from django.urls import include, path
 
 urlpatterns = [
+    # Django's set_language redirect view (#19): the language switcher POSTs
+    # here, it writes the language cookie and bounces back. No account needed —
+    # the choice rides in a cookie and survives every later visit.
+    path("i18n/", include("django.conf.urls.i18n")),
     path("", include("studying.urls")),
     path("", include("planning.urls")),
     path("", include("reference.urls")),

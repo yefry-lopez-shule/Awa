@@ -14,6 +14,7 @@
         .projection { color: #57606a; font-style: italic; }
         nav { margin-bottom: 1.5rem; }
         nav a { margin-right: 1rem; }
+        .language-switcher { display: inline; margin-left: 0.5rem; }
         .errors { background: #fdecea; border: 1px solid #f5c2c0; padding: 0.75rem 1rem; margin-bottom: 1rem; }
         .messages { background: #eaf7ea; border: 1px solid #b9e0b9; padding: 0.75rem 1rem; margin-bottom: 1rem; }
     </style>
@@ -27,6 +28,18 @@
     <a href="{% url 'studying:degree_map' %}">{% trans "Degree map" %}</a>
     <a href="{% url 'planning:availability_template' %}">{% trans "Availability template" %}</a>
     <a href="{% url 'reference:roadmap' %}">{% trans "Roadmap" %}</a>
+    <form action="{% url 'set_language' %}" method="post" class="language-switcher">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <label for="language-select">{% trans "Language" %}</label>
+        <select id="language-select" name="language" onchange="this.form.submit()">
+            {% get_current_language as current_language %}
+            {% for code, name in LANGUAGES %}
+                <option value="{{ code }}" {% if code == current_language %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+        <noscript><button type="submit">{% trans "Switch" %}</button></noscript>
+    </form>
 </nav>
 {% if messages %}
     <ul class="messages">

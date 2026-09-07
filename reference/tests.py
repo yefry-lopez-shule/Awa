@@ -195,4 +195,7 @@ class ReferenceViewTests(TestCase):
         response = self.client.post(reverse("reference:roadmap"))
         self.assertIn(response.status_code, (403, 405))
         response = self.client.get(reverse("reference:roadmap"))
-        self.assertNotContains(response, "<form")
+        # The only form on any page is the global language switcher (#19);
+        # the roadmap view itself offers no write path.
+        self.assertEqual(response.content.decode().count("<form"), 1)
+        self.assertContains(response, 'class="language-switcher"')

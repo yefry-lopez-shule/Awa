@@ -1,0 +1,814 @@
+# Awá — Spanish (es) UI catalog.
+# Domain data (Course names, códigos, university names) is never translated
+# here — it is inserted as-is at the view (ADR-0013). Only UI chrome and the
+# structured reason/verdict templates carry translations.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Awa\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-07 12:31-0600\n"
+"PO-Revision-Date: 2026-09-07 12:45-0600\n"
+"Last-Translator: Awá <noreply@example.com>\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\planning\forecast.py:23
+msgid "Needs a passing average on what's left"
+msgstr "Necesita un promedio de aprobación en lo que queda"
+
+#: .\planning\forecast.py:24
+msgid "Passing is secured"
+msgstr "La aprobación está asegurada"
+
+#: .\planning\forecast.py:25 .\studying\models.py:28 .\studying\models.py:86
+#: .\studying\templates\studying\cuatrimestre_setup.html:49
+#: .\studying\templates\studying\onboarding.html:66
+msgid "Passed"
+msgstr "Aprobado"
+
+#: .\planning\forecast.py:26
+msgid "Not passed"
+msgstr "No aprobado"
+
+#: .\planning\forecast.py:27
+msgid "Passing is no longer possible"
+msgstr "Ya no es posible aprobar"
+
+#: .\planning\models.py:22
+msgid "Monday"
+msgstr "Lunes"
+
+#: .\planning\models.py:23
+msgid "Tuesday"
+msgstr "Martes"
+
+#: .\planning\models.py:24
+msgid "Wednesday"
+msgstr "Miércoles"
+
+#: .\planning\models.py:25
+msgid "Thursday"
+msgstr "Jueves"
+
+#: .\planning\models.py:26
+msgid "Friday"
+msgstr "Viernes"
+
+#: .\planning\models.py:27
+msgid "Saturday"
+msgstr "Sábado"
+
+#: .\planning\models.py:28
+msgid "Sunday"
+msgstr "Domingo"
+
+#: .\planning\reasons.py:29
+msgid "today"
+msgstr "hoy"
+
+#: .\planning\reasons.py:30
+#, python-format
+msgid "in %(days)d day"
+msgid_plural "in %(days)d days"
+msgstr[0] "en %(days)d día"
+msgstr[1] "en %(days)d días"
+
+#: .\planning\reasons.py:37
+#, python-format
+msgid "%(item)s due %(when)s · %(weight)s%% of the grade · deadline override"
+msgstr "%(item)s con entrega %(when)s · %(weight)s%% de la nota · prioridad por entrega"
+
+#: .\planning\reasons.py:44
+#, python-format
+msgid "%(item)s due %(when)s · %(weight)s%% of the grade"
+msgstr "%(item)s con entrega %(when)s · %(weight)s%% de la nota"
+
+#: .\planning\reasons.py:52
+#, python-format
+msgid "%(hours)sh behind its Ration this week"
+msgstr "%(hours)sh por debajo de su Ración esta semana"
+
+#: .\planning\reasons.py:55
+msgid "Nothing pressing right now"
+msgstr "Nada urgente por ahora"
+
+#: .\planning\templates\planning\availability_template.html:4
+#: .\planning\templates\planning\availability_template.html:7
+#: .\templates\base.html:28
+msgid "Availability template"
+msgstr "Plantilla de disponibilidad"
+
+#: .\planning\templates\planning\availability_template.html:18
+#, python-format
+msgid "Capacity: %(hours)s h/week"
+msgstr "Capacidad: %(hours)s h/semana"
+
+#: .\planning\templates\planning\availability_template.html:23
+#, python-format
+msgid ""
+"\n"
+"        The Plan demands %(demand)s h this week; you have %(capacity)s h.\n"
+"        "
+msgstr ""
+"\n"
+"        El Plan exige %(demand)s h esta semana; tienes %(capacity)s h.\n"
+"        "
+
+#: .\planning\templates\planning\availability_template.html:32
+#: .\reference\templates\reference\roadmap.html:24
+#: .\studying\templates\studying\cuatrimestre_setup.html:30
+#: .\studying\templates\studying\degree_map.html:31
+#: .\studying\templates\studying\onboarding.html:34
+#: .\studying\templates\studying\quick_log.html:28
+#: .\studying\templates\studying\quick_log.html:57
+msgid "Course"
+msgstr "Curso"
+
+#: .\planning\templates\planning\availability_template.html:32
+msgid "Target (h/week)"
+msgstr "Meta (h/semana)"
+
+#: .\planning\templates\planning\availability_template.html:44
+msgid "No Term open yet — the overload warning appears once Courses are enrolled."
+msgstr "Aún no hay Cuatrimestre abierto — la advertencia de sobrecarga aparece al matricular Cursos."
+
+#: .\planning\templates\planning\availability_template.html:50
+msgid "Study Windows"
+msgstr "Ventanas de estudio"
+
+#: .\planning\templates\planning\availability_template.html:51
+msgid "The hours you are willing to study within, per weekday. Leave both blank for a day you never study."
+msgstr "Las horas dentro de las que estás dispuesto a estudiar, por día de la semana. Deja ambas en blanco un día que nunca estudias."
+
+#: .\planning\templates\planning\availability_template.html:54
+#: .\planning\templates\planning\availability_template.html:72
+msgid "Weekday"
+msgstr "Día de la semana"
+
+#: .\planning\templates\planning\availability_template.html:54
+#: .\planning\templates\planning\availability_template.html:72
+msgid "Start"
+msgstr "Inicio"
+
+#: .\planning\templates\planning\availability_template.html:54
+#: .\planning\templates\planning\availability_template.html:72
+msgid "End"
+msgstr "Fin"
+
+#: .\planning\templates\planning\availability_template.html:67
+msgid "Availability Blocks"
+msgstr "Bloques de disponibilidad"
+
+#: .\planning\templates\planning\availability_template.html:68
+msgid "Recurring commitments that consume hours — work, class, gym, chores. Never studied, only subtracted."
+msgstr "Compromisos recurrentes que consumen horas — trabajo, clases, gimnasio, quehaceres. Nunca se estudian, solo se restan."
+
+#: .\planning\templates\planning\availability_template.html:73
+msgid "Label"
+msgstr "Etiqueta"
+
+#: .\planning\templates\planning\availability_template.html:73
+#: .\studying\templates\studying\course_detail.html:58
+#: .\studying\templates\studying\cuatrimestre_setup.html:99
+msgid "Remove"
+msgstr "Quitar"
+
+#: .\planning\templates\planning\availability_template.html:103
+msgid "e.g. Work"
+msgstr "p. ej. Trabajo"
+
+#: .\planning\templates\planning\availability_template.html:109
+#: .\studying\templates\studying\course_detail.html:91
+#: .\studying\templates\studying\onboarding.html:87
+#: .\studying\templates\studying\quick_log.html:80
+msgid "Save"
+msgstr "Guardar"
+
+#: .\planning\templates\planning\dashboard.html:4
+#: .\planning\templates\planning\dashboard.html:7
+msgid "Tonight"
+msgstr "Esta noche"
+
+#: .\planning\templates\planning\dashboard.html:10
+msgid "No Term is open yet. Mark a Course in progress on the onboarding checklist to start the ranking."
+msgstr "Aún no hay Cuatrimestre abierto. Marca un Curso en curso en la lista de incorporación para empezar el orden."
+
+#: .\planning\templates\planning\dashboard.html:12
+msgid "Nothing to rank yet — no in-progress Courses this Term."
+msgstr "Aún no hay nada que ordenar — no hay Cursos en curso este Cuatrimestre."
+
+#: .\planning\templates\planning\dashboard.html:16
+#, python-format
+msgid "%(day)s · %(free)sh free tonight · last 7d %(logged)s/%(capacity)sh · plan wants %(demand)sh"
+msgstr "%(day)s · %(free)sh libres esta noche · últimos 7 d %(logged)s/%(capacity)sh · el plan pide %(demand)sh"
+
+#: .\planning\templates\planning\dashboard.html:20
+#, python-format
+msgid "Streak: %(days)s day"
+msgid_plural "Streak: %(days)s days"
+msgstr[0] "Racha: %(days)s día"
+msgstr[1] "Racha: %(days)s días"
+
+#: .\planning\templates\planning\dashboard.html:24
+#, python-format
+msgid "TONIGHT → %(course)s · %(hours)sh"
+msgstr "ESTA NOCHE → %(course)s · %(hours)sh"
+
+#: .\planning\templates\planning\dashboard.html:30
+#, python-format
+msgid "last session (%(when)s, %(hours)sh): “%(note)s”"
+msgstr "última sesión (%(when)s, %(hours)sh): “%(note)s”"
+
+#: .\planning\templates\planning\dashboard.html:36
+msgid "Log tonight’s session →"
+msgstr "Registrar la sesión de esta noche →"
+
+#: .\planning\templates\planning\dashboard.html:43
+#, python-format
+msgid "No logs since %(date)s — this recommendation assumes you studied nothing since."
+msgstr "Sin registros desde %(date)s — esta recomendación supone que no has estudiado nada desde entonces."
+
+#: .\planning\templates\planning\dashboard.html:45
+msgid "Nothing logged yet — this recommendation assumes you have studied nothing."
+msgstr "Aún no hay registros — esta recomendación supone que no has estudiado nada."
+
+#: .\planning\templates\planning\dashboard.html:53
+#, python-format
+msgid "The Plan wants %(demand)sh a week and you have %(capacity)sh. Rations are scaled to fit."
+msgstr "El Plan pide %(demand)sh por semana y tú tienes %(capacity)sh. Las Raciones se escalan para caber."
+
+#: .\planning\templates\planning\dashboard.html:58
+msgid "Courses, in order"
+msgstr "Cursos, en orden"
+
+#: .\planning\views.py:130 .\studying\views.py:56 .\studying\views.py:336
+msgid "Saved."
+msgstr "Guardado."
+
+#: .\planning\views.py:163
+msgid "Times must be valid (HH:MM)."
+msgstr "Las horas deben ser válidas (HH:MM)."
+
+#: .\planning\views.py:177
+msgid "A Study Window needs both a start and an end, or neither."
+msgstr "Una Ventana de estudio necesita un inicio y un fin, o ninguno de los dos."
+
+#: .\planning\views.py:184
+msgid "A Study Window's start must come before its end."
+msgstr "El inicio de una Ventana de estudio debe ser anterior a su fin."
+
+#: .\planning\views.py:193
+msgid "An Availability Block needs a weekday, a start, an end and a label."
+msgstr "Un Bloque de disponibilidad necesita un día de la semana, un inicio, un fin y una etiqueta."
+
+#: .\planning\views.py:199
+msgid "Invalid weekday for an Availability Block."
+msgstr "Día de la semana no válido para un Bloque de disponibilidad."
+
+#: .\planning\views.py:206
+msgid "An Availability Block's start must come before its end."
+msgstr "El inicio de un Bloque de disponibilidad debe ser anterior a su fin."
+
+#: .\reference\models.py:26 .\reference\templates\reference\roadmap.html:45
+msgid "All covered"
+msgstr "Todo cubierto"
+
+#: .\reference\models.py:27 .\reference\templates\reference\roadmap.html:47
+msgid "Partially covered"
+msgstr "Parcialmente cubierto"
+
+#: .\reference\models.py:28 .\reference\templates\reference\roadmap.html:49
+msgid "Not covered by this Plan"
+msgstr "No cubierto por este Plan"
+
+#: .\reference\templates\reference\roadmap.html:4 .\templates\base.html:29
+msgid "Roadmap"
+msgstr "Roadmap"
+
+#: .\reference\templates\reference\roadmap.html:7
+msgid "Self-study roadmap"
+msgstr "Roadmap de autoestudio"
+
+#: .\reference\templates\reference\roadmap.html:9
+msgid "Reference only — these courses are never studied, scheduled, or recommended. Curated in the spreadsheet, imported with manage.py loadroadmap."
+msgstr "Solo de referencia — estos cursos nunca se estudian, programan ni recomiendan. Se curan en la hoja de cálculo y se importan con manage.py loadroadmap."
+
+#: .\reference\templates\reference\roadmap.html:13
+msgid "No roadmap imported yet — load one with manage.py loadroadmap."
+msgstr "Aún no se ha importado ningún roadmap — carga uno con manage.py loadroadmap."
+
+#: .\reference\templates\reference\roadmap.html:25
+msgid "Coverage"
+msgstr "Cobertura"
+
+#: .\reference\templates\reference\roadmap.html:26
+msgid "Corresponds to"
+msgstr "Corresponde a"
+
+#: .\reference\templates\reference\roadmap.html:36
+msgid "official"
+msgstr "oficial"
+
+#: .\reference\templates\reference\roadmap.html:37
+msgid "video"
+msgstr "video"
+
+#: .\reference\templates\reference\roadmap.html:38
+msgid "YouTube"
+msgstr "YouTube"
+
+#: .\reference\templates\reference\roadmap.html:39
+msgid "Textbook"
+msgstr "Libro de texto"
+
+#: .\reference\templates\reference\roadmap.html:63
+msgid "frozen at import"
+msgstr "congelado en la importación"
+
+#: .\reference\templates\reference\roadmap.html:67
+msgid "nothing on the UNED side"
+msgstr "nada del lado de la UNED"
+
+#: .\studying\models.py:26 .\studying\templates\studying\onboarding.html:64
+msgid "Pending"
+msgstr "Pendiente"
+
+#: .\studying\models.py:27 .\studying\models.py:85
+#: .\studying\templates\studying\onboarding.html:65
+msgid "In progress"
+msgstr "En curso"
+
+#: .\studying\models.py:29 .\studying\templates\studying\onboarding.html:67
+msgid "Transferred"
+msgstr "Convalidado"
+
+#: .\studying\models.py:30 .\studying\models.py:87
+#: .\studying\templates\studying\cuatrimestre_setup.html:50
+#: .\studying\templates\studying\onboarding.html:68
+msgid "Failed"
+msgstr "Reprobado"
+
+#: .\studying\models.py:74
+#: .\studying\templates\studying\cuatrimestre_setup.html:87
+#: .\studying\templates\studying\onboarding.html:76
+msgid "Easy"
+msgstr "Fácil"
+
+#: .\studying\models.py:75
+#: .\studying\templates\studying\cuatrimestre_setup.html:88
+#: .\studying\templates\studying\onboarding.html:77
+msgid "Normal"
+msgstr "Normal"
+
+#: .\studying\models.py:76
+#: .\studying\templates\studying\cuatrimestre_setup.html:89
+#: .\studying\templates\studying\onboarding.html:78
+msgid "Hard"
+msgstr "Difícil"
+
+#: .\studying\templates\studying\course_detail.html:18
+#, python-format
+msgid "Enrolled this Term: %(term)s"
+msgstr "Matriculado este Cuatrimestre: %(term)s"
+
+#: .\studying\templates\studying\course_detail.html:22
+msgid "Pass forecast"
+msgstr "Pronóstico de aprobación"
+
+#: .\studying\templates\studying\course_detail.html:24
+#, python-format
+msgid "Weighted grade so far: %(grade)s — across the Graded Items scored to date only."
+msgstr "Nota ponderada hasta ahora: %(grade)s — solo sobre los Ítems calificados evaluados a la fecha."
+
+#: .\studying\templates\studying\course_detail.html:26
+#, python-format
+msgid "Still ungraded: %(weight)s of %(max)s in weight."
+msgstr "Aún sin calificar: %(weight)s de %(max)s en peso."
+
+#: .\studying\templates\studying\course_detail.html:28
+#, python-format
+msgid "You need an average of %(average)s on everything still ungraded to reach the pass mark."
+msgstr "Necesitas un promedio de %(average)s en todo lo que queda sin calificar para llegar a la nota de aprobación."
+
+#: .\studying\templates\studying\course_detail.html:30
+msgid "Already at or above the pass mark — passing is secured even with weight still to come."
+msgstr "Ya estás en la nota de aprobación o por encima — la aprobación está asegurada aunque quede peso por venir."
+
+#: .\studying\templates\studying\course_detail.html:32
+msgid "Passed — every Graded Item is in and the weighted grade clears the pass mark."
+msgstr "Aprobado — todos los Ítems calificados están y la nota ponderada supera la nota de aprobación."
+
+#: .\studying\templates\studying\course_detail.html:34
+msgid "Not passed — every Graded Item is in and the weighted grade is below the pass mark."
+msgstr "No aprobado — todos los Ítems calificados están y la nota ponderada está por debajo de la nota de aprobación."
+
+#: .\studying\templates\studying\course_detail.html:36
+msgid "Passing is no longer mathematically possible — even a perfect score on everything left falls short of the pass mark."
+msgstr "Aprobar ya no es matemáticamente posible — ni una nota perfecta en todo lo que queda alcanza la nota de aprobación."
+
+#: .\studying\templates\studying\course_detail.html:41
+msgid "Graded Items"
+msgstr "Ítems calificados"
+
+#: .\studying\templates\studying\course_detail.html:43
+#, python-format
+msgid ""
+"\n"
+"        Weights: %(total)s of %(max)s\n"
+"        "
+msgstr ""
+"\n"
+"        Pesos: %(total)s de %(max)s\n"
+"        "
+
+#: .\studying\templates\studying\course_detail.html:47
+msgid "Type the dates off the orientación académica. Weights must add up to the grade scale before the grid will save. Enter a grade whenever one arrives."
+msgstr "Escribe las fechas de la orientación académica. Los pesos deben sumar la escala de notas antes de que la tabla se guarde. Ingresa una nota cuando llegue."
+
+#: .\studying\templates\studying\course_detail.html:54
+#: .\studying\templates\studying\cuatrimestre_setup.html:96
+msgid "Type"
+msgstr "Tipo"
+
+#: .\studying\templates\studying\course_detail.html:55
+#: .\studying\templates\studying\cuatrimestre_setup.html:97
+msgid "Weight"
+msgstr "Peso"
+
+#: .\studying\templates\studying\course_detail.html:56
+#: .\studying\templates\studying\cuatrimestre_setup.html:98
+msgid "Due"
+msgstr "Entrega"
+
+#: .\studying\templates\studying\course_detail.html:57
+#: .\studying\templates\studying\onboarding.html:36
+msgid "Grade"
+msgstr "Nota"
+
+#: .\studying\templates\studying\course_detail.html:94
+#, python-format
+msgid "Status: %(status)s"
+msgstr "Estado: %(status)s"
+
+#: .\studying\templates\studying\course_detail.html:96
+#, python-format
+msgid "Final grade: %(grade)s"
+msgstr "Nota final: %(grade)s"
+
+#: .\studying\templates\studying\course_detail.html:98
+msgid "No active Enrollment — Graded Items are entered against an Enrollment."
+msgstr "Sin Matrícula activa — los Ítems calificados se ingresan contra una Matrícula."
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:4
+#: .\studying\templates\studying\cuatrimestre_setup.html:7
+#: .\templates\base.html:26
+msgid "Cuatrimestre setup"
+msgstr "Configuración del cuatrimestre"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:10
+#: .\studying\templates\studying\degree_map.html:10
+#: .\studying\templates\studying\onboarding.html:10
+msgid "No active Plan yet — load one with manage.py loadplan."
+msgstr "Aún no hay Plan activo — carga uno con manage.py loadplan."
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:22
+msgid "Close the last Term"
+msgstr "Cerrar el último Cuatrimestre"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:23
+#, python-format
+msgid "Every Course from %(term)s needs an Outcome before the next Cuatrimestre can be set up. The suggestion is the weighted grade so far measured against the pass mark — change it wherever you know better."
+msgstr "Cada Curso de %(term)s necesita un Resultado antes de poder configurar el siguiente Cuatrimestre. La sugerencia es la nota ponderada hasta ahora medida contra la nota de aprobación — cámbiala donde sepas mejor."
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:31
+msgid "Weighted grade so far"
+msgstr "Nota ponderada hasta ahora"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:32
+msgid "Outcome"
+msgstr "Resultado"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:42
+#, python-format
+msgid "%(g)s across graded items"
+msgstr "%(g)s sobre los ítems calificados"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:44
+msgid "nothing graded"
+msgstr "nada calificado"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:57
+msgid "Confirm and close the Term"
+msgstr "Confirmar y cerrar el Cuatrimestre"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:60
+msgid "New Term"
+msgstr "Nuevo Cuatrimestre"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:65
+msgid "Term dates"
+msgstr "Fechas del Cuatrimestre"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:66
+#: .\studying\templates\studying\onboarding.html:27
+msgid "Start date"
+msgstr "Fecha de inicio"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:67
+#: .\studying\templates\studying\onboarding.html:28
+msgid "End date"
+msgstr "Fecha de fin"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:70
+msgid "Enrol"
+msgstr "Matricular"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:72
+msgid "No Courses are unlocked to enrol in yet — close a Term with a passing Outcome first."
+msgstr "Aún no hay Cursos desbloqueados para matricular — primero cierra un Cuatrimestre con un Resultado de aprobación."
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:81
+#: .\studying\templates\studying\onboarding.html:56
+msgid "créditos"
+msgstr "créditos"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:85
+#: .\studying\templates\studying\onboarding.html:37
+msgid "Difficulty"
+msgstr "Dificultad"
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:123
+#, python-format
+msgid "Each enrolled Course's weights must sum to %(max)s before setup will save. Type the due dates off the orientación académica."
+msgstr "Los pesos de cada Curso matriculado deben sumar %(max)s antes de que la configuración se guarde. Escribe las fechas de entrega de la orientación académica."
+
+#: .\studying\templates\studying\cuatrimestre_setup.html:124
+msgid "Set up the Cuatrimestre"
+msgstr "Configurar el Cuatrimestre"
+
+#: .\studying\templates\studying\degree_map.html:4
+#: .\studying\templates\studying\degree_map.html:7 .\templates\base.html:27
+msgid "Degree map"
+msgstr "Mapa del programa"
+
+#: .\studying\templates\studying\degree_map.html:15
+#, python-format
+msgid ""
+"\n"
+"        %(earned)s of %(required)s créditos earned\n"
+"        "
+msgstr ""
+"\n"
+"        %(earned)s de %(required)s créditos ganados\n"
+"        "
+
+#: .\studying\templates\studying\degree_map.html:25
+#, python-format
+msgid ""
+"\n"
+"                        Bloque %(name)s — %(earned)s / %(total)s créditos\n"
+"                        "
+msgstr ""
+"\n"
+"                        Bloque %(name)s — %(earned)s / %(total)s créditos\n"
+"                        "
+
+#: .\studying\templates\studying\degree_map.html:32
+msgid "Créditos"
+msgstr "Créditos"
+
+#: .\studying\templates\studying\degree_map.html:33
+msgid "Standing"
+msgstr "Situación"
+
+#: .\studying\templates\studying\degree_map.html:41
+#: .\studying\templates\studying\onboarding.html:55
+msgid "Slot"
+msgstr "Slot"
+
+#: .\studying\templates\studying\degree_map.html:49
+msgid "outstanding"
+msgstr "por asignar"
+
+#: .\studying\templates\studying\degree_map.html:53
+msgid "unlocked"
+msgstr "desbloqueado"
+
+#: .\studying\templates\studying\degree_map.html:55
+msgid "opens next term"
+msgstr "se abre el próximo cuatrimestre"
+
+#: .\studying\templates\studying\onboarding.html:4
+#: .\studying\templates\studying\onboarding.html:7 .\templates\base.html:25
+msgid "Onboarding checklist"
+msgstr "Lista de incorporación"
+
+#: .\studying\templates\studying\onboarding.html:26
+msgid "Term dates (only needed the first time you mark a Course in progress)"
+msgstr "Fechas del Cuatrimestre (solo se necesitan la primera vez que marcas un Curso en curso)"
+
+#: .\studying\templates\studying\onboarding.html:35
+msgid "Status"
+msgstr "Estado"
+
+#: .\studying\templates\studying\onboarding.html:44
+#, python-format
+msgid "Bloque %(name)s (%(credits)s créditos)"
+msgstr "Bloque %(name)s (%(credits)s créditos)"
+
+#: .\studying\templates\studying\onboarding.html:52
+msgid "prerequisite not yet satisfied"
+msgstr "requisito aún no cumplido"
+
+#: .\studying\templates\studying\onboarding.html:58
+msgid "código"
+msgstr "código"
+
+#: .\studying\templates\studying\onboarding.html:59
+msgid "name"
+msgstr "nombre"
+
+#: .\studying\templates\studying\quick_log.html:4
+#: .\studying\templates\studying\quick_log.html:7 .\templates\base.html:24
+msgid "Quick log"
+msgstr "Registro rápido"
+
+#: .\studying\templates\studying\quick_log.html:10
+msgid "No Term is open yet. Mark a Course in progress on the onboarding checklist first."
+msgstr "Aún no hay Cuatrimestre abierto. Primero marca un Curso en curso en la lista de incorporación."
+
+#: .\studying\templates\studying\quick_log.html:24
+msgid "Log a session"
+msgstr "Registrar una sesión"
+
+#: .\studying\templates\studying\quick_log.html:29
+#: .\studying\templates\studying\quick_log.html:58
+msgid "Hours"
+msgstr "Horas"
+
+#: .\studying\templates\studying\quick_log.html:30
+#: .\studying\templates\studying\quick_log.html:59
+msgid "Date studied"
+msgstr "Fecha estudiada"
+
+#: .\studying\templates\studying\quick_log.html:31
+#: .\studying\templates\studying\quick_log.html:61
+msgid "Left off"
+msgstr "Dónde quedaste"
+
+#: .\studying\templates\studying\quick_log.html:52
+msgid "Recent sessions"
+msgstr "Sesiones recientes"
+
+#: .\studying\templates\studying\quick_log.html:53
+msgid "The date studied is what Hours Behind sums over the last seven days; fix it here if a session was recorded on the wrong day. The date recorded, which the Streak counts, cannot be changed."
+msgstr "La fecha estudiada es lo que Horas atrasadas suma en los últimos siete días; corrígela aquí si una sesión se registró el día equivocado. La fecha de registro, que cuenta la Racha, no se puede cambiar."
+
+#: .\studying\templates\studying\quick_log.html:60
+msgid "Recorded"
+msgstr "Registrada"
+
+#: .\studying\templates\studying\quick_log.html:62
+msgid "Delete"
+msgstr "Eliminar"
+
+#: .\studying\views.py:97
+msgid "Logged."
+msgstr "Registrado."
+
+#: .\studying\views.py:176
+msgid "Choose a Course you are enrolled in this Term."
+msgstr "Elige un Curso en el que estés matriculado este Cuatrimestre."
+
+#: .\studying\views.py:226
+msgid "Hours must be a number."
+msgstr "Las horas deben ser un número."
+
+#: .\studying\views.py:229
+msgid "Hours must be greater than zero."
+msgstr "Las horas deben ser mayores que cero."
+
+#: .\studying\views.py:236
+msgid "A Study Log needs the date you studied."
+msgstr "Un Registro de estudio necesita la fecha en que estudiaste."
+
+#: .\studying\views.py:241
+msgid "The date studied must be a valid date."
+msgstr "La fecha estudiada debe ser una fecha válida."
+
+#: .\studying\views.py:424 .\studying\views.py:895
+msgid "Choose an item type from the Program's list."
+msgstr "Elige un tipo de ítem de la lista del Programa."
+
+#: .\studying\views.py:430 .\studying\views.py:900
+msgid "A weight must be a number."
+msgstr "Un peso debe ser un número."
+
+#: .\studying\views.py:433 .\studying\views.py:903
+msgid "A weight must be greater than zero."
+msgstr "Un peso debe ser mayor que cero."
+
+#: .\studying\views.py:441 .\studying\views.py:910
+msgid "A due date must be a valid date."
+msgstr "Una fecha de entrega debe ser una fecha válida."
+
+#: .\studying\views.py:448
+msgid "A grade must be a number."
+msgstr "Una nota debe ser un número."
+
+#: .\studying\views.py:452
+#, python-format
+msgid "A grade must be between 0 and %(max)s."
+msgstr "Una nota debe estar entre 0 y %(max)s."
+
+#: .\studying\views.py:466
+#, python-format
+msgid "Weights must sum to %(max)s; the current items sum to %(total)s."
+msgstr "Los pesos deben sumar %(max)s; los ítems actuales suman %(total)s."
+
+#: .\studying\views.py:523
+msgid "Invalid status submitted."
+msgstr "Se envió un estado no válido."
+
+#: .\studying\views.py:532
+msgid "Grade must be a number."
+msgstr "La nota debe ser un número."
+
+#: .\studying\views.py:535
+msgid "A grade may only be recorded for a passed or failed Course."
+msgstr "Una nota solo puede registrarse para un Curso aprobado o reprobado."
+
+#: .\studying\views.py:546
+msgid "A Slot needs both a código and a name, or neither."
+msgstr "Un Slot necesita un código y un nombre, o ninguno de los dos."
+
+#: .\studying\views.py:568
+msgid "Marking a Course in progress needs this term's start and end dates."
+msgstr "Marcar un Curso en curso necesita las fechas de inicio y fin de este cuatrimestre."
+
+#: .\studying\views.py:577
+msgid "Term dates must be valid dates."
+msgstr "Las fechas del Cuatrimestre deben ser fechas válidas."
+
+#: .\studying\views.py:671
+msgid "Last Term closed."
+msgstr "Último Cuatrimestre cerrado."
+
+#: .\studying\views.py:688
+msgid "Cuatrimestre set up."
+msgstr "Cuatrimestre configurado."
+
+#: .\studying\views.py:745
+msgid "Choose passed or failed for every closing Course."
+msgstr "Elige aprobado o reprobado para cada Curso que se cierra."
+
+#: .\studying\views.py:748
+msgid "A closing Course is either passed or failed."
+msgstr "Un Curso que se cierra está aprobado o reprobado."
+
+#: .\studying\views.py:807
+msgid "a start date"
+msgstr "una fecha de inicio"
+
+#: .\studying\views.py:808
+msgid "an end date"
+msgstr "una fecha de fin"
+
+#: .\studying\views.py:810
+msgid "The Term's start date must come before its end date."
+msgstr "La fecha de inicio del Cuatrimestre debe ser anterior a su fecha de fin."
+
+#: .\studying\views.py:827
+msgid "Tick at least one Course to enrol in."
+msgstr "Marca al menos un Curso para matricular."
+
+#: .\studying\views.py:859
+#, python-format
+msgid "The Term needs %(label)s."
+msgstr "El Cuatrimestre necesita %(label)s."
+
+#: .\studying\views.py:864
+msgid "The Term's dates must be valid dates."
+msgstr "Las fechas del Cuatrimestre deben ser fechas válidas."
+
+#: .\studying\views.py:917
+#, python-format
+msgid "Weights for %(code)s must sum to %(max)s; they sum to %(total)s."
+msgstr "Los pesos de %(code)s deben sumar %(max)s; suman %(total)s."
+
+#: .\templates\base.html:23
+msgid "Dashboard"
+msgstr "Tablero"
+
+#: .\templates\base.html:33
+msgid "Language"
+msgstr "Idioma"
+
+#: .\templates\base.html:40
+msgid "Switch"
+msgstr "Cambiar"

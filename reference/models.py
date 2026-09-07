@@ -10,6 +10,7 @@ file, never a CRUD screen) and are read by exactly one screen.
 """
 
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from curriculum.models import Course
 from studying.models import STATUSES_COUNTING_CREDITS, Status, status_for_course
@@ -22,9 +23,9 @@ class Coverage(models.TextChoices):
     moves the entry with no re-import (ADR-0012).
     """
 
-    ALL = "all", "All covered"
-    PARTIAL = "partial", "Partially covered"
-    NONE = "none", "Not covered by this Plan"
+    ALL = "all", _("All covered")
+    PARTIAL = "partial", _("Partially covered")
+    NONE = "none", _("Not covered by this Plan")
 
 
 class RoadmapEntry(models.Model):
