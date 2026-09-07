@@ -1,9 +1,13 @@
-"""Planning: the availability template the Capacity figure is derived from.
+"""Planning: the availability template the Capacity figure is derived from,
+and `ScoringConfig` — the ranking engine's tunable constants.
 
 See CONTEXT.md's "Planning" section and ADR-0007 (neglect is measured against
 Capacity). A Study Window is what a weekday offers at most; an Availability
 Block is what is taken out of it; Capacity is the remainder, recomputed on
 every read so editing the template touches no other stored data.
+
+`ScoringConfig` is a singleton holding the numbers `rank()` is calibrated
+around (scope.md §6): the formula's shape is code, its constants are here.
 """
 
 from django.db import models
@@ -76,3 +80,69 @@ class AvailabilityBlock(models.Model):
 
     def __str__(self):
         return f"{self.get_weekday_display()} {self.start:%H:%M}–{self.end:%H:%M} {self.label}"
+
+
+class ScoringConfig(models.Model):
+    """Singleton: the ranking engine's tunable constants (scope.md §6, locked
+    decision 15 — the formula's *shape* is code, its *numbers* are here).
+
+    Separate from `AppSettings` (which points at the active Plan): a curriculum
+    pointer and a set of scoring weights get changed by different people for
+    different reasons. `pass_mark`, `hours_per_credit` and `grade_scale_max`
+    stay on `Program` — they are the institution's rules, not tuning knobs.
+
+    `w_deadline` is a unit conversion, not a taste knob (ADR-0008): how many
+    hours of neglect a full-weight Graded Item due today is worth. At 1.0 the
+    deadline term changes no ordering at all; at 50 it overrides Difficulty
+    everywhere and reverses ADR-0004. ~20 — about one Ration — is the only
+    defensible value.
+    """
+
+    override_window_hours = models.FloatField(
+        default=48.0,
+        help_text="A Graded Item due within this many hours can jump the queue.",
+    )
+    override_min_weight = models.FloatField(
+        default=0.10,
+        help_text="As a fraction of the full grade — a lighter item never "
+        "triggers the Override (ADR-0008).",
+    )
+    deadline_half_life_days = models.FloatField(
+        default=7.0,
+        help_text="Days over which Deadline Pressure from an item halves.",
+    )
+    w_hours_behind = models.FloatField(default=1.0)
+    w_deadline = models.FloatField(default=20.0)
+    stale_after_days = models.PositiveSmallIntegerField(
+        default=4,
+        help_text="Days since the last Study Log after which the banner labels "
+        "its recommendation a guess. Never suppresses it.",
+    )
+
+    difficulty_easy = models.FloatField(default=0.75)
+    difficulty_normal = models.FloatField(default=1.0)
+    difficulty_hard = models.FloatField(default=1.5)
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        obj, _created = cls.objects.get_or_create(pk=1)
+        return obj
+
+    @property
+    def difficulty_multipliers(self):
+        """Keyed by the `Difficulty` value string, so `rank()` and
+        `course_targets()` look a multiplier up the same way.
+        """
+
+        return {
+            "easy": self.difficulty_easy,
+            "normal": self.difficulty_normal,
+            "hard": self.difficulty_hard,
+        }
+
+    def __str__(self):
+        return f"ScoringConfig(w_deadline={self.w_deadline})"

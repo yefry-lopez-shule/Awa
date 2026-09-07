@@ -11,19 +11,11 @@ availability template mid-Term therefore changes Capacity and nothing else.
 
 from collections import defaultdict
 from dataclasses import dataclass
+from types import SimpleNamespace
 
-from studying.models import Difficulty, Outcome
+from studying.models import Outcome
 
-from .models import AvailabilityBlock, StudyWindow
-
-# Difficulty multiplies the Target (ADR-0004, ADR-0007). scope.md §6 places
-# these constants on `ScoringConfig`; #15 (the ranking engine) will move them
-# there. Until then they live here as the one place the multiplier is written.
-DIFFICULTY_HOURS_MULTIPLIER = {
-    Difficulty.EASY: 0.75,
-    Difficulty.NORMAL: 1.0,
-    Difficulty.HARD: 1.5,
-}
+from .models import AvailabilityBlock, ScoringConfig, StudyWindow
 
 
 def _minutes(t):
@@ -73,19 +65,48 @@ def capacity_hours():
     return total_minutes / 60
 
 
+def hours_left_in_todays_window(now):
+    """The study hours still available today: today's Study Window, minus its
+    Availability Blocks, minus the part of it already gone by `now`.
+
+    This is the first of the two limits on the Recommendation's committed
+    hours (scope.md §4) — the app never asks for time that has already passed.
+    0 when today has no Study Window or it is already over.
+    """
+
+    weekday = now.weekday()
+    try:
+        window = StudyWindow.objects.get(weekday=weekday)
+    except StudyWindow.DoesNotExist:
+        return 0.0
+
+    remaining_start = max(window.start, now.time())
+    if remaining_start >= window.end:
+        return 0.0
+
+    blocks = list(AvailabilityBlock.objects.filter(weekday=weekday))
+    remaining = SimpleNamespace(start=remaining_start, end=window.end)
+    return _free_minutes(remaining, blocks) / 60
+
+
 def course_targets(term):
     """The weekly Target of every in-progress Course in `term`, keyed by
     Course: créditos × hours_per_credit × difficulty multiplier (scope.md §4).
+
+    The Difficulty multiplier is `ScoringConfig`'s (ADR-0004, ADR-0007) — the
+    one place it is written, shared with `rank()`.
     """
 
     hours_per_credit = term.program.hours_per_credit
+    multipliers = ScoringConfig.load().difficulty_multipliers
     targets = {}
     for enrollment in term.enrollments.filter(
         outcome=Outcome.IN_PROGRESS
     ).select_related("course"):
-        multiplier = DIFFICULTY_HOURS_MULTIPLIER[Difficulty(enrollment.difficulty)]
         targets[enrollment.course] = (
-            enrollment.course.credits * hours_per_credit * multiplier
+            enrollment.course.credits
+            * hours_per_credit
+            * multipliers[enrollment.difficulty]
         )
     return targets
 

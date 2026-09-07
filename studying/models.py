@@ -5,6 +5,7 @@ and ADR-0010 (Status lives on the Course; Outcome lives on the Enrollment).
 """
 
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from curriculum.models import Course, Program
@@ -156,3 +157,43 @@ class GradedItem(models.Model):
 
     def __str__(self):
         return f"{self.type} ({self.weight}) — {self.enrollment.course.code}"
+
+
+class StudyLog(models.Model):
+    """A record that the student spent some hours on a Course, optionally
+    noting where they left off (CONTEXT.md). Attaches to one Enrollment.
+
+    It carries two dates doing different jobs (scope.md §5, ADR-0006):
+
+    - `studied_on` is what Hours Behind sums over the trailing seven days. It
+      defaults to today but is editable, because free-form logging (locked
+      decision 3) means sessions get recorded late and the rolling window
+      makes the date material.
+    - `recorded_at` is set once and never edited. It is what the Streak and
+      the engine's staleness flag measure, so a backdated entry corrects the
+      ranking without repairing the Streak — the Streak stays an alarm rather
+      than something that can be faked retroactively.
+
+    The quick-log surface that writes these is #16; #15 only reads them, for
+    the ranking engine and its banner.
+    """
+
+    enrollment = models.ForeignKey(
+        Enrollment, on_delete=models.CASCADE, related_name="study_logs"
+    )
+    hours = models.FloatField()
+    note = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Where the student left off — handed back by the next "
+        "Recommendation for this Course.",
+    )
+    studied_on = models.DateField(default=timezone.localdate)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-studied_on", "-recorded_at"]
+
+    def __str__(self):
+        return f"{self.enrollment.course.code}: {self.hours}h on {self.studied_on}"
