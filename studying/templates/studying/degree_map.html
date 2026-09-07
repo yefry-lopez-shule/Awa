@@ -40,7 +40,7 @@
                             {% if row.is_slot %}
                                 {% trans "Slot" %}: {{ row.entry.slot_label }} #{{ row.entry.slot_index }}
                             {% else %}
-                                {{ row.course.code }} — {{ row.course.name }}
+                                <a href="{% url 'studying:course_detail' row.course.id %}">{{ row.course.code }} — {{ row.course.name }}</a>
                             {% endif %}
                         </td>
                         <td>{{ row.credits }}</td>

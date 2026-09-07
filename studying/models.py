@@ -121,3 +121,38 @@ class Enrollment(models.Model):
 
     def __str__(self):
         return f"{self.course.code} @ {self.term}"
+
+
+class GradedItem(models.Model):
+    """Anything marked that contributes to a Course's Grade — a tarea, quiz,
+    parcial, final, proyecto (CONTEXT.md). Attaches to one Enrollment.
+
+    `type` is picked from the Program's `item_types` at entry but stored as
+    plain text: the engine only ever reads `weight` and `due_at`, so the type
+    vocabulary is data, not an enum (ADR-0002, scope.md §6).
+
+    Weights across an Enrollment's items are validated to sum to the Program's
+    `grade_scale_max` — but by the Course detail grid at save time, not here. A
+    half-entered grid is a legitimate transient state; a *saved* one that
+    doesn't add up would let a forecast lie quietly (scope.md §5 step 4).
+    """
+
+    enrollment = models.ForeignKey(
+        Enrollment, on_delete=models.CASCADE, related_name="graded_items"
+    )
+    type = models.CharField(max_length=50)
+    weight = models.FloatField(
+        help_text="Share of the Course Grade, in the same units as the Program's grade_scale_max."
+    )
+    due_at = models.DateField(null=True, blank=True)
+    grade = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The mark once earned; null until the grade arrives.",
+    )
+
+    class Meta:
+        ordering = ["due_at", "id"]
+
+    def __str__(self):
+        return f"{self.type} ({self.weight}) — {self.enrollment.course.code}"
