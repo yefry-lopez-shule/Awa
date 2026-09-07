@@ -141,6 +141,30 @@ class OnboardingSubmitHistoricalStatusTests(TestCase):
         self.assertFalse(CourseStatus.objects.filter(course=ctx["req"]).exists())
         self.assertIn("errors", response.context)
 
+    def test_grade_is_rejected_for_pending_and_in_progress(self):
+        ctx = build_plan()
+        term = Term.objects.create(
+            program=ctx["program"],
+            start_date=datetime.date(2026, 3, 1),
+            end_date=datetime.date(2026, 6, 15),
+        )
+
+        response = self.client.post(
+            reverse("studying:onboarding"),
+            {
+                f"status_{ctx['entry_req'].id}": "pending",
+                f"grade_{ctx['entry_req'].id}": "85",
+                f"status_{ctx['entry_gated'].id}": "in_progress",
+                f"grade_{ctx['entry_gated'].id}": "85",
+                f"difficulty_{ctx['entry_gated'].id}": "normal",
+                f"status_{ctx['entry_slot'].id}": "pending",
+            },
+        )
+
+        self.assertIn("errors", response.context)
+        self.assertFalse(CourseStatus.objects.filter(course=ctx["req"]).exists())
+        self.assertFalse(Enrollment.objects.filter(term=term, course=ctx["gated"]).exists())
+
     def test_unsatisfied_prerequisite_still_saves(self):
         ctx = build_plan()
 
@@ -177,6 +201,30 @@ class OnboardingSlotTests(TestCase):
         self.assertEqual(ctx["entry_slot"].course.name, "Ética")
         self.assertEqual(ctx["entry_slot"].course.credits, 3)
         self.assertEqual(status_for_course(ctx["entry_slot"].course), Status.PASSED)
+
+    def test_filling_a_slot_with_a_code_that_already_exists_reconciles_instead_of_crashing(self):
+        ctx = build_plan()
+        # A humanities Course recorded some other way (e.g. a previous partial
+        # pass through the checklist) that isn't attached to any BlockEntry.
+        existing = Course.objects.create(
+            institution=ctx["institution"], code="HUM-01", name="Ética", credits=3
+        )
+
+        response = self.client.post(
+            reverse("studying:onboarding"),
+            {
+                f"status_{ctx['entry_req'].id}": "pending",
+                f"status_{ctx['entry_gated'].id}": "pending",
+                f"status_{ctx['entry_slot'].id}": "passed",
+                f"slot_code_{ctx['entry_slot'].id}": "HUM-01",
+                f"slot_name_{ctx['entry_slot'].id}": "Some other name typed by mistake",
+            },
+        )
+
+        self.assertNotEqual(response.status_code, 500)
+        ctx["entry_slot"].refresh_from_db()
+        self.assertEqual(ctx["entry_slot"].course_id, existing.id)
+        self.assertEqual(Course.objects.filter(code="HUM-01").count(), 1)
 
     def test_leaving_a_slot_unfilled_contributes_credits_but_not_earned(self):
         from studying.queries import credits_earned

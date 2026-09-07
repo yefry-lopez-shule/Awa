@@ -31,7 +31,7 @@ def onboarding(request):
 
     entries = list(
         BlockEntry.objects.filter(block__plan=plan)
-        .select_related("block", "course")
+        .select_related("block", "course", "course__status_record")
         .order_by("block__name", "id")
     )
 
@@ -55,8 +55,10 @@ def _build_rows(entries, plan):
         if entry.course is not None:
             status = status_for_course(entry.course)
             unlocked = is_unlocked(entry.course, plan)
-            course_status = CourseStatus.objects.filter(course=entry.course).first()
-            final_grade = course_status.final_grade if course_status else None
+            try:
+                final_grade = entry.course.status_record.final_grade
+            except CourseStatus.DoesNotExist:
+                final_grade = None
         else:
             status = Status.PENDING
             unlocked = True
@@ -92,8 +94,8 @@ def _process_onboarding_submission(request, plan, entries):
             except ValueError:
                 errors.append(_("Grade must be a number."))
 
-        if status == Status.TRANSFERRED and grade is not None:
-            errors.append(_("A transferred Course accepts no grade."))
+        if grade is not None and status not in (Status.PASSED, Status.FAILED):
+            errors.append(_("A grade may only be recorded for a passed or failed Course."))
 
         difficulty_raw = request.POST.get(f"difficulty_{entry.id}", Difficulty.NORMAL)
         try:
@@ -154,11 +156,12 @@ def _process_onboarding_submission(request, plan, entries):
             course = entry.course
 
             if course is None and p["slot_code"] and p["slot_name"]:
-                course = Course.objects.create(
+                # Matches by código rather than duplicating, same reconciliation
+                # rule loadplan applies to the catalog (ADR-0009).
+                course, _created = Course.objects.get_or_create(
                     institution=plan.program.institution,
                     code=p["slot_code"],
-                    name=p["slot_name"],
-                    credits=entry.credits,
+                    defaults={"name": p["slot_name"], "credits": entry.credits},
                 )
                 entry.course = course
                 entry.save(update_fields=["course"])
