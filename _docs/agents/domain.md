@@ -27,7 +27,14 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
         ├── 0003-plans-are-data-files.md
         ├── 0004-difficulty-compounds.md
         ├── 0005-no-django-admin.md
-        └── 0006-roadmap-is-reference-not-a-track.md
+        ├── 0006-roadmap-is-reference-not-a-track.md
+        ├── 0007-neglect-is-measured-against-capacity.md
+        ├── 0008-score-is-difficulty-times-a-weighted-sum.md
+        ├── 0009-the-curriculum-spine.md
+        ├── 0010-status-on-the-course-outcome-on-the-enrollment.md
+        ├── 0011-onboarding-creates-the-first-enrollment.md
+        ├── 0012-roadmap-coverage-is-many-to-many.md
+        └── 0013-reason-strings-are-structured-rendered-per-locale.md
 ```
 
 New ADRs go in `_docs/adr/`, numbered from the highest existing number.
