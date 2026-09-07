@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Cuatrimestre setup" %} — Awá{% endblock %}
+
+{% block content %}
+<h1>{% trans "Cuatrimestre setup" %}</h1>
+
+{% if not plan %}
+    <p>{% trans "No active Plan yet — load one with manage.py loadplan." %}</p>
+{% else %}
+
+{% if errors %}
+    <div class="errors">
+        <ul>
+            {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+{% if step == "closeout" %}
+    <h2>{% trans "Close the last Term" %}</h2>
+    <p>{% blocktrans with term=last_term %}Every Course from {{ term }} needs an Outcome before the next Cuatrimestre can be set up. The suggestion is the weighted grade so far measured against the pass mark — change it wherever you know better.{% endblocktrans %}</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <table>
+            <thead>
+                <tr>
+                    <th>{% trans "Course" %}</th>
+                    <th>{% trans "Weighted grade so far" %}</th>
+                    <th>{% trans "Outcome" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in closeout_rows %}
+                    <tr>
+                        <td>{{ row.course.code }} — {{ row.course.name }}</td>
+                        <td>
+                            {{ row.weighted_so_far|floatformat:"-2" }}
+                            {% if row.grade_so_far is not None %}
+                                <span class="projection">({% blocktrans with g=row.grade_so_far|floatformat:"-2" %}{{ g }} across graded items{% endblocktrans %})</span>
+                            {% else %}
+                                <span class="projection">({% trans "nothing graded" %})</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <select name="outcome_{{ row.enrollment.id }}">
+                                <option value="passed" {% if row.derived == "passed" %}selected{% endif %}>{% trans "Passed" %}</option>
+                                <option value="failed" {% if row.derived == "failed" %}selected{% endif %}>{% trans "Failed" %}</option>
+                            </select>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit">{% trans "Confirm and close the Term" %}</button>
+    </form>
+{% else %}
+    <h2>{% trans "New Term" %}</h2>
+    <form method="post">
+        {% csrf_token %}
+
+        <fieldset>
+            <legend>{% trans "Term dates" %}</legend>
+            <label>{% trans "Start date" %} <input type="date" name="term_start"></label>
+            <label>{% trans "End date" %} <input type="date" name="term_end"></label>
+        </fieldset>
+
+        <h3>{% trans "Enrol" %}</h3>
+        {% if not enrol_rows %}
+            <p>{% trans "No Courses are unlocked to enrol in yet — close a Term with a passing Outcome first." %}</p>
+        {% endif %}
+
+        {% for row in enrol_rows %}
+            <fieldset>
+                <legend>
+                    <label>
+                        <input type="checkbox" name="enrol_{{ row.course.id }}">
+                        {{ row.course.code }} — {{ row.course.name }}
+                        ({{ row.credits }} {% trans "créditos" %})
+                    </label>
+                </legend>
+
+                <label>{% trans "Difficulty" %}
+                    <select name="difficulty_{{ row.course.id }}">
+                        <option value="easy">{% trans "Easy" %}</option>
+                        <option value="normal" selected>{% trans "Normal" %}</option>
+                        <option value="hard">{% trans "Hard" %}</option>
+                    </select>
+                </label>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{% trans "Type" %}</th>
+                            <th>{% trans "Weight" %}</th>
+                            <th>{% trans "Due" %}</th>
+                            <th>{% trans "Remove" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i, drow in row.deadline_rows %}
+                            <tr>
+                                <td>
+                                    <select name="deadline_{{ row.course.id }}_{{ i }}_type">
+                                        <option value="">—</option>
+                                        {% for t in item_types %}
+                                            <option value="{{ t }}" {% if t == drow.type %}selected{% endif %}>{{ t }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><input type="number" step="any" min="0" name="deadline_{{ row.course.id }}_{{ i }}_weight" value="{{ drow.weight }}"></td>
+                                <td><input type="date" name="deadline_{{ row.course.id }}_{{ i }}_due"></td>
+                                <td><input type="checkbox" name="deadline_{{ row.course.id }}_{{ i }}_delete"></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </fieldset>
+        {% endfor %}
+
+        <p>{% blocktrans with max=grade_scale_max %}Each enrolled Course's weights must sum to {{ max }} before setup will save. Type the due dates off the orientación académica.{% endblocktrans %}</p>
+        <button type="submit">{% trans "Set up the Cuatrimestre" %}</button>
+    </form>
+{% endif %}
+{% endif %}
+{% endblock %}
