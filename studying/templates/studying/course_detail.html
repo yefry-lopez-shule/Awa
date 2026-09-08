@@ -6,13 +6,7 @@
 {% block content %}
 <h1>{{ course.code }} — {{ course.name }}</h1>
 
-{% if errors %}
-    <div class="errors">
-        <ul>
-            {% for error in errors %}<li>{{ error }}</li>{% endfor %}
-        </ul>
-    </div>
-{% endif %}
+{% include "_errors.html" %}
 
 {% if enrollment %}
     <p>{% blocktrans with term=enrollment.term %}Enrolled this Term: {{ term }}{% endblocktrans %}</p>

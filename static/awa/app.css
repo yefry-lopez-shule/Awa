@@ -1,0 +1,327 @@
+/*
+ * Awá design tokens + component skin.
+ *
+ * Layered on top of vendored Pico (classless, jade accent). Pico owns the
+ * element-level reset and base rhythm; this file self-hosts the typeface,
+ * sets the Awá scale, restyles navigation, and reworks the three domain
+ * status colours so they hold up in light and dark.
+ *
+ * Scope: visual only. No selector here depends on markup that a view would
+ * have to change to produce.
+ */
+
+/* ---------------------------------------------------------------- fonts --- */
+/* IBM Plex Sans 400/500/600 + IBM Plex Mono 400, self-hosted from
+ * static/awa/fonts/. Subsets and unicode-ranges are the @fontsource cuts of
+ * github.com/IBM/plex (see fonts/README.md). font-display: swap so text
+ * paints immediately in the fallback stack. */
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/ibm-plex-sans-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/ibm-plex-sans-latin-ext-400-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/ibm-plex-sans-latin-500-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/ibm-plex-sans-latin-ext-500-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/ibm-plex-sans-latin-600-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/ibm-plex-sans-latin-ext-600-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/ibm-plex-mono-latin-ext-400-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* --------------------------------------------------------------- tokens --- */
+:root {
+  /* type */
+  --awa-font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --awa-font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", "Cascadia Mono",
+    "Consolas", "Liberation Mono", Menlo, monospace;
+
+  /* spacing scale */
+  --awa-space-1: 0.25rem;
+  --awa-space-2: 0.5rem;
+  --awa-space-3: 0.75rem;
+  --awa-space-4: 1rem;
+  --awa-space-5: 1.5rem;
+  --awa-space-6: 2rem;
+
+  --awa-radius: 6px;
+
+  /* domain status — light */
+  --awa-warning: #9a3d00;
+  --awa-warning-bg: #fbe9dd;
+  --awa-warning-border: #edc3a6;
+  --awa-unlocked: #1a7f37;
+  --awa-unlocked-bg: #e5f4e9;
+  --awa-unlocked-border: #b3ddc1;
+  --awa-projection: #5a6472;
+
+  /* Pico overrides */
+  --pico-font-family-sans-serif: var(--awa-font-sans);
+  --pico-font-family: var(--awa-font-sans);
+  --pico-font-family-monospace: var(--awa-font-mono);
+  --pico-border-radius: var(--awa-radius);
+  --pico-typography-spacing-vertical: var(--awa-space-5);
+  --pico-spacing: var(--awa-space-4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* domain status — dark: lift lightness, drop chroma so they read on the
+     * dark ground without glowing. */
+    --awa-warning: #f0a875;
+    --awa-warning-bg: #3a2313;
+    --awa-warning-border: #6b4525;
+    --awa-unlocked: #5fd07f;
+    --awa-unlocked-bg: #14311f;
+    --awa-unlocked-border: #2f5c3f;
+    --awa-projection: #9aa4b2;
+  }
+}
+
+/* ---------------------------------------------------------------- layout --- */
+body {
+  font-family: var(--awa-font-sans);
+}
+
+body > main,
+body > .messages,
+.site-nav .nav-disclosure {
+  max-width: 60rem;
+  margin-inline: auto;
+  padding-inline: var(--awa-space-4);
+}
+
+body > main {
+  padding-block: var(--awa-space-5);
+}
+
+body > .messages {
+  margin-top: var(--awa-space-4);
+}
+
+/* ------------------------------------------------------------------ nav --- */
+.site-nav {
+  /* full-bleed bottom rule; the inner .nav-disclosure carries the width cap */
+  border-bottom: 1px solid var(--pico-muted-border-color);
+  margin-bottom: 0;
+  padding-block: var(--awa-space-3);
+}
+
+.site-nav .nav-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--awa-space-2);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.site-nav .nav-links a:hover {
+  text-decoration: underline;
+}
+
+.site-nav .language-switcher {
+  display: flex;
+  align-items: center;
+  gap: var(--awa-space-2);
+  margin: 0;
+}
+
+.site-nav .language-switcher select {
+  width: auto;
+  margin: 0;
+  padding-block: var(--awa-space-1);
+}
+
+/* The disclosure is a plain <details>, styled mobile-first.
+ *
+ * Narrow (default): the summary shows; the list is a stacked column that the
+ * UA hides until the student opens <details>.
+ * Wide (>= 48rem, the one breakpoint): the summary is hidden and the list is
+ * force-shown as a row, so the [open] state stops mattering. No script. */
+.nav-disclosure {
+  border: 0;
+  padding-block: 0;
+}
+
+.nav-disclosure > summary {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  padding: var(--awa-space-1) var(--awa-space-2);
+  border-radius: var(--awa-radius);
+  list-style: none;
+}
+
+.nav-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.site-nav .nav-links {
+  list-style: none;
+  margin: 0;
+  padding: var(--awa-space-3) 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--awa-space-3);
+}
+
+@media (min-width: 48rem) {
+  .nav-disclosure > summary {
+    display: none;
+  }
+  .nav-disclosure > .nav-links {
+    display: flex !important; /* beats the UA `details:not([open])` rule */
+    flex-flow: row wrap;
+    align-items: center;
+    gap: var(--awa-space-2) var(--awa-space-4);
+    padding-top: 0;
+  }
+}
+
+/* ----------------------------------------------------------------- icons --- */
+.icon {
+  width: 1.15em;
+  height: 1.15em;
+  flex: none;
+  vertical-align: -0.15em;
+}
+
+/* ---------------------------------------------------------------- tables --- */
+/* A straight port of the borders/padding the old base.html <style> carried, so
+ * the grids don't regress when that block is deleted. The responsive reflow of
+ * these tables is #32 (plain tables) and #33 (setup grids), not this ticket. */
+main table {
+  border-collapse: collapse;
+}
+
+main th,
+main td {
+  border: 1px solid var(--pico-table-border-color);
+  padding: var(--awa-space-2) var(--awa-space-3);
+  vertical-align: top;
+}
+
+.block-header td {
+  background: var(--pico-card-sectioning-background-color);
+  font-weight: 600;
+}
+
+/* Numeric / código columns read as data — mono, tabular figures. */
+main td input[type="number"],
+main td input[type="date"],
+main td input[type="time"],
+.codigo,
+.numeric {
+  font-family: var(--awa-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------- status colours --- */
+.warning {
+  color: var(--awa-warning);
+}
+
+.unlocked {
+  color: var(--awa-unlocked);
+  font-weight: 600;
+}
+
+.projection {
+  color: var(--awa-projection);
+  font-style: italic;
+}
+
+/* --------------------------------------------------------- notices --- */
+/* Another port: the old base.html <style> gave .errors and .messages a tinted
+ * box so they don't vanish when it's deleted. The shared _errors.html partial
+ * stays otherwise unstyled — its real treatment, with empty states and focus,
+ * is the polish pass (#34). Reworked here only so the tints hold in dark. */
+.errors,
+.messages {
+  border: 1px solid;
+  padding: var(--awa-space-3) var(--awa-space-4);
+  margin-bottom: var(--awa-space-4);
+}
+
+.errors {
+  color: var(--awa-warning);
+  background: var(--awa-warning-bg);
+  border-color: var(--awa-warning-border);
+}
+
+.messages {
+  list-style: none;
+  color: var(--awa-unlocked);
+  background: var(--awa-unlocked-bg);
+  border-color: var(--awa-unlocked-border);
+}

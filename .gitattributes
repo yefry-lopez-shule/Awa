@@ -1,0 +1,5 @@
+# Keep vendored / binary skin assets byte-exact across platforms so the SHA-256
+# hashes recorded in static/vendor/README.md and static/awa/fonts/README.md
+# (epic #29: "hash-checked against the GitHub release") stay verifiable.
+*.woff2 binary
+static/vendor/** -text
