@@ -105,6 +105,11 @@
   --awa-font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", "Cascadia Mono",
     "Consolas", "Liberation Mono", Menlo, monospace;
 
+  /* type scale — Pico owns the body size; these are the steps off it the
+   * Awá components reach for. */
+  --awa-text-sm: 0.875rem;
+  --awa-text-lg: 1.25rem;
+
   /* spacing scale */
   --awa-space-1: 0.25rem;
   --awa-space-2: 0.5rem;
@@ -122,6 +127,7 @@
   --awa-unlocked: #1a7f37;
   --awa-unlocked-bg: #e5f4e9;
   --awa-unlocked-border: #b3ddc1;
+  --awa-behind: #b42318;
   --awa-projection: #5a6472;
 
   /* Pico overrides */
@@ -143,6 +149,7 @@
     --awa-unlocked: #5fd07f;
     --awa-unlocked-bg: #14311f;
     --awa-unlocked-border: #2f5c3f;
+    --awa-behind: #f2836f;
     --awa-projection: #9aa4b2;
   }
 }
@@ -299,6 +306,120 @@ main td input[type="time"],
 .projection {
   color: var(--awa-projection);
   font-style: italic;
+}
+
+/* -------------------------------------------------------- dashboard --- */
+/* #31: the Recommendation banner is a distinct card; the ordered Course
+ * cards get the type scale; the ASCII ration bar becomes a real graphic.
+ * Visual only — every string and the card/banner markup are the view's. */
+
+.banner {
+  border: 1px solid var(--pico-muted-border-color);
+  border-left: 4px solid var(--pico-primary);
+  border-radius: var(--awa-radius);
+  background: var(--pico-card-background-color);
+  padding: var(--awa-space-4) var(--awa-space-5);
+  margin-bottom: var(--awa-space-5);
+}
+
+.banner > * {
+  margin-bottom: var(--awa-space-2);
+}
+
+.banner > *:last-child {
+  margin-bottom: 0;
+}
+
+/* The header and streak lines are secondary context — smaller and muted. The
+ * blocktrans strings can't be broken up to isolate their numbers, so they
+ * stay in the sans face (mono is the card cells' job, #31). */
+.banner .banner-header,
+.banner .streak {
+  font-size: var(--awa-text-sm);
+  color: var(--awa-projection);
+}
+
+.banner .recommendation {
+  font-size: var(--awa-text-lg);
+  font-weight: 600;
+}
+
+.banner .reason {
+  color: var(--awa-projection);
+}
+
+.banner .left-off {
+  font-style: italic;
+  color: var(--awa-projection);
+}
+
+.banner .log-cta {
+  font-weight: 500;
+}
+
+/* .warning / .warning.stale keep the shared amber from the status-colours
+ * block; inside the banner they only need the top rule to sit apart. */
+.banner .warning {
+  margin-top: var(--awa-space-3);
+  font-size: var(--awa-text-sm);
+}
+
+.cards .card {
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--awa-radius);
+  padding: var(--awa-space-3) var(--awa-space-4);
+  margin-bottom: var(--awa-space-3);
+}
+
+.cards .card-title {
+  font-weight: 600;
+  margin-bottom: var(--awa-space-2);
+}
+
+.cards .card-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--awa-space-1) var(--awa-space-2);
+  font-size: var(--awa-text-sm);
+  margin-bottom: 0;
+}
+
+/* Numeric cells (`.numeric`) already pick up IBM Plex Mono + tabular figures
+ * from the shared rule up in the tables section. */
+
+/* The bar: a fixed-width track with a fill clamped to its own width. The
+ * inline `width:` the template sets is already capped at 100%; `max-width`
+ * is a belt-and-braces guard. `data-band` colours it by the shortfall. */
+.ration-bar {
+  display: inline-block;
+  width: 6rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--pico-muted-border-color);
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.ration-bar-fill {
+  display: block;
+  height: 100%;
+  max-width: 100%;
+  border-radius: inherit;
+}
+
+/* Bands, by how far the Course is behind its Ration: on-track (not behind) →
+ * amber (behind) → red (more than half the Ration still owed). */
+.ration-bar-fill[data-band="on-track"] {
+  background: var(--awa-unlocked);
+}
+
+.ration-bar-fill[data-band="amber"] {
+  background: var(--awa-warning);
+}
+
+.ration-bar-fill[data-band="red"] {
+  background: var(--awa-behind);
 }
 
 /* --------------------------------------------------------- notices --- */

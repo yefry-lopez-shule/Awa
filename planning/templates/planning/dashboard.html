@@ -64,12 +64,16 @@
                 {% else %}
                     {{ card.course.name }}
                 {% endif %}
-                · {{ card.course.credits|floatformat:'-2' }}cr{% if card.course.difficulty != "normal" %} · {{ card.course.difficulty }}{% endif %}
+                · <span class="numeric">{{ card.course.credits|floatformat:'-2' }}</span>cr{% if card.course.difficulty != "normal" %} · {{ card.course.difficulty }}{% endif %}
             </p>
             <p class="card-bar">
-                {{ card.course.hours_logged_7d|floatformat:'-1' }}/{{ card.course.ration|floatformat:'-1' }}h
-                <span class="bar">{{ card.bar }}</span>
-                {% if card.course.score is None %}—{% else %}{{ card.course.score|floatformat:'-1' }}{% endif %}
+                {# Ration bar: fill width is logged/ration as a percent, held at 100% once a Course is over its Ration. #}
+                {% if card.course.ration and card.course.hours_logged_7d >= card.course.ration %}{% widthratio 1 1 100 as fill_pct %}{% else %}{% widthratio card.course.hours_logged_7d card.course.ration 100 as fill_pct %}{% endif %}
+                {# Shortfall as a percent of the Ration picks the colour band. `|add:0` casts widthratio's string so `> 50` compares as numbers. #}
+                {% widthratio card.course.hours_behind card.course.ration 100 as shortfall_pct %}
+                <span class="numeric">{{ card.course.hours_logged_7d|floatformat:'-1' }}/{{ card.course.ration|floatformat:'-1' }}h</span>
+                <span class="ration-bar" aria-hidden="true"><span class="ration-bar-fill" data-band="{% if not card.course.hours_behind %}on-track{% elif shortfall_pct|add:0 > 50 %}red{% else %}amber{% endif %}" style="width: {{ fill_pct }}%"></span></span>
+                <span class="numeric">{% if card.course.score is None %}—{% else %}{{ card.course.score|floatformat:'-1' }}{% endif %}</span>
                 · {{ card.reason_line }}
             </p>
         </div>

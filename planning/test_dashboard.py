@@ -5,6 +5,7 @@ and that it labels a stale ranking rather than hiding it.
 """
 
 import datetime
+import re
 
 from django.test import TestCase
 from django.urls import reverse
@@ -220,6 +221,56 @@ class CourseCardTests(TestCase):
         response = self.client.get(reverse("planning:dashboard"), headers=EN)
 
         self.assertIsNone(response.context["cards"][0]["course"].score)
+
+
+class RationBarTests(TestCase):
+    """#31: the dashboard's ASCII ration bar (`██░░░░░░░░`) is now a CSS
+    element — a track plus a fill whose inline width is `hours_logged_7d /
+    ration` as a percentage, held at 100% when a Course is over its Ration,
+    and carrying a `data-band` keyed to how far behind the Course is.
+    """
+
+    def _dashboard_for(self, logged):
+        institution, program, _ = activate_plan()
+        term = open_term(program)
+        a_study_window_for_today()
+        enrolment = enrol(term, institution, "AAA")  # 12h Ration
+        if logged:
+            StudyLog.objects.create(
+                enrollment=enrolment, hours=logged, studied_on=timezone.localdate()
+            )
+        return self.client.get(reverse("planning:dashboard"), headers=EN)
+
+    def _fill_widths(self, response):
+        # Every `width: N%` in the page is a ration-bar fill (the viewport meta
+        # is `width=device-width`), so this is the set of rendered fill widths.
+        return [int(n) for n in re.findall(r"width: (\d+)%", response.content.decode())]
+
+    def test_no_hours_logged_renders_a_zero_width_fill(self):
+        response = self._dashboard_for(0)
+
+        self.assertEqual(self._fill_widths(response), [0])
+
+    def test_half_the_ration_logged_renders_a_half_width_fill(self):
+        response = self._dashboard_for(6.0)  # 6 of a 12h Ration
+
+        self.assertEqual(self._fill_widths(response), [50])
+
+    def test_over_the_ration_never_renders_a_fill_past_one_hundred_percent(self):
+        response = self._dashboard_for(20.0)  # 20 logged against a 12h Ration
+
+        widths = self._fill_widths(response)
+        self.assertTrue(widths, "expected a ration-bar fill on the card")
+        self.assertLessEqual(max(widths), 100)
+
+    def test_a_course_not_behind_its_ration_is_on_track(self):
+        self.assertContains(self._dashboard_for(20.0), 'data-band="on-track"')
+
+    def test_a_course_somewhat_behind_its_ration_is_amber(self):
+        self.assertContains(self._dashboard_for(8.0), 'data-band="amber"')  # 4h of 12 behind
+
+    def test_a_course_far_behind_its_ration_is_red(self):
+        self.assertContains(self._dashboard_for(0), 'data-band="red"')  # a full Ration behind
 
 
 class StreakBannerTests(TestCase):
