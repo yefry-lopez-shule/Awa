@@ -311,6 +311,22 @@ class EveryScreenRendersInBothLocalesTests(TestCase):
         self.assertIn(":has(td[data-label])", app_css)
         self.assertIn("@media (max-width", app_css)
 
+    def test_the_setup_grids_reflow_via_data_label_and_css_only(self):
+        # #33: onboarding and cuatrimestre setup carry `data-label` on their
+        # grid body cells in both locales, reusing the #32 CSS rule — nothing
+        # scripted, nothing a view has to change.
+        setup = {
+            reverse("studying:onboarding"),
+            reverse("studying:cuatrimestre_setup"),
+        }
+        for language in ("es", "en"):
+            for url, response in self.each_screen(language):
+                if url not in setup:
+                    continue
+                with self.subTest(language=language, url=url):
+                    self.assertIn(b"data-label=", response.content)
+                    self.assertNotIn(b"<script", response.content)
+
     def test_vendored_pico_matches_the_hash_pinned_in_its_readme(self):
         # #30 / epic #29: Pico is "hash-checked against the GitHub release". The
         # SHA-256 recorded in static/vendor/README.md is the check; this asserts
