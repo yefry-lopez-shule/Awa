@@ -288,6 +288,29 @@ class EveryScreenRendersInBothLocalesTests(TestCase):
             with self.subTest(asset=asset):
                 self.assertIsNotNone(finders.find(asset), f"{asset} does not resolve")
 
+    def test_the_plain_data_screens_reflow_via_data_label_and_css_only(self):
+        # #32: the degree map, course detail, availability template and quick
+        # log carry `data-label` on their body cells in both locales, and the
+        # narrow stacked-row reflow is a pure CSS rule keyed off that
+        # attribute — nothing scripted, nothing a view has to change.
+        plain = {
+            reverse("studying:degree_map"),
+            reverse("studying:course_detail", args=[self.course.id]),
+            reverse("planning:availability_template"),
+            reverse("studying:quick_log"),
+        }
+        for language in ("es", "en"):
+            for url, response in self.each_screen(language):
+                if url not in plain:
+                    continue
+                with self.subTest(language=language, url=url):
+                    self.assertIn(b"data-label=", response.content)
+                    self.assertNotIn(b"<script", response.content)
+
+        app_css = Path(finders.find("awa/app.css")).read_text(encoding="utf-8")
+        self.assertIn(":has(td[data-label])", app_css)
+        self.assertIn("@media (max-width", app_css)
+
     def test_vendored_pico_matches_the_hash_pinned_in_its_readme(self):
         # #30 / epic #29: Pico is "hash-checked against the GitHub release". The
         # SHA-256 recorded in static/vendor/README.md is the check; this asserts

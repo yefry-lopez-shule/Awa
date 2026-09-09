@@ -28,8 +28,8 @@
         <tbody>
             {% for row in targets %}
                 <tr>
-                    <td>{{ row.course.code }} — {{ row.course.name }}</td>
-                    <td>{{ row.hours|floatformat:1 }}</td>
+                    <td data-label="{% trans 'Course' %}">{{ row.course.code }} — {{ row.course.name }}</td>
+                    <td data-label="{% trans 'Target (h/week)' %}">{{ row.hours|floatformat:1 }}</td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -50,9 +50,9 @@
         <tbody>
             {% for row in weekday_rows %}
                 <tr>
-                    <td>{{ row.label }}</td>
-                    <td><input type="time" name="window_start_{{ row.value }}" value="{% if row.window %}{{ row.window.start|time:'H:i' }}{% endif %}"></td>
-                    <td><input type="time" name="window_end_{{ row.value }}" value="{% if row.window %}{{ row.window.end|time:'H:i' }}{% endif %}"></td>
+                    <td data-label="{% trans 'Weekday' %}">{{ row.label }}</td>
+                    <td data-label="{% trans 'Start' %}"><input type="time" name="window_start_{{ row.value }}" value="{% if row.window %}{{ row.window.start|time:'H:i' }}{% endif %}"></td>
+                    <td data-label="{% trans 'End' %}"><input type="time" name="window_end_{{ row.value }}" value="{% if row.window %}{{ row.window.end|time:'H:i' }}{% endif %}"></td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -70,21 +70,21 @@
         <tbody>
             {% for block in blocks %}
                 <tr>
-                    <td>
+                    <td data-label="{% trans 'Weekday' %}">
                         <select name="block_{{ block.id }}_weekday">
                             {% for value, label in weekday_choices %}
                                 <option value="{{ value }}" {% if value == block.weekday %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                     </td>
-                    <td><input type="time" name="block_{{ block.id }}_start" value="{{ block.start|time:'H:i' }}"></td>
-                    <td><input type="time" name="block_{{ block.id }}_end" value="{{ block.end|time:'H:i' }}"></td>
-                    <td><input type="text" name="block_{{ block.id }}_label" value="{{ block.label }}"></td>
-                    <td><input type="checkbox" name="block_{{ block.id }}_delete"></td>
+                    <td data-label="{% trans 'Start' %}"><input type="time" name="block_{{ block.id }}_start" value="{{ block.start|time:'H:i' }}"></td>
+                    <td data-label="{% trans 'End' %}"><input type="time" name="block_{{ block.id }}_end" value="{{ block.end|time:'H:i' }}"></td>
+                    <td data-label="{% trans 'Label' %}"><input type="text" name="block_{{ block.id }}_label" value="{{ block.label }}"></td>
+                    <td data-label="{% trans 'Remove' %}"><input type="checkbox" name="block_{{ block.id }}_delete"></td>
                 </tr>
             {% endfor %}
             <tr>
-                <td>
+                <td data-label="{% trans 'Weekday' %}">
                     <select name="new_block_weekday">
                         <option value="">—</option>
                         {% for value, label in weekday_choices %}
@@ -92,9 +92,9 @@
                         {% endfor %}
                     </select>
                 </td>
-                <td><input type="time" name="new_block_start"></td>
-                <td><input type="time" name="new_block_end"></td>
-                <td><input type="text" name="new_block_label" placeholder="{% trans 'e.g. Work' %}"></td>
+                <td data-label="{% trans 'Start' %}"><input type="time" name="new_block_start"></td>
+                <td data-label="{% trans 'End' %}"><input type="time" name="new_block_end"></td>
+                <td data-label="{% trans 'Label' %}"><input type="text" name="new_block_label" placeholder="{% trans 'e.g. Work' %}"></td>
                 <td></td>
             </tr>
         </tbody>

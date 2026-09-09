@@ -331,3 +331,23 @@ class CourseDetailGridWriteTests(TestCase):
         self.assertEqual(GradedItem.objects.get(id=item.id).due_at, datetime.date(2026, 6, 20))
         response = self.client.get(reverse("studying:course_detail", args=[ctx["course"].id]))
         self.assertEqual(response.context["items"][0].due_at, datetime.date(2026, 6, 20))
+
+
+class CourseDetailResponsiveReflowTests(TestCase):
+    """#32: the Graded Items grid reflows to stacked, labelled rows on a
+    narrow viewport — a `data-label` on every body cell plus a CSS rule, no
+    JS and no view change.
+    """
+
+    def test_every_grid_cell_carries_its_column_label(self):
+        ctx = build_enrollment()
+        GradedItem.objects.create(enrollment=ctx["enrollment"], type="final", weight=100)
+
+        html = self.client.get(
+            reverse("studying:course_detail", args=[ctx["course"].id]),
+            headers={"accept-language": "en"},
+        ).content.decode()
+
+        for label in ("Type", "Weight", "Due", "Grade", "Remove"):
+            self.assertIn(f'data-label="{label}"', html)
+        self.assertNotIn("<script", html)

@@ -335,3 +335,32 @@ class EditAndDeleteTests(TestCase):
         self.log.refresh_from_db()
         self.assertEqual(self.log.recorded_at, original)
         self.assertEqual(self.log.note, "changed my mind")
+
+
+class ResponsiveReflowTests(TestCase):
+    """#32: both grids — "log a session" and "recent sessions" — reflow to
+    stacked, labelled rows on a narrow viewport via a `data-label` on every
+    body cell plus a CSS rule. No JS, no view change.
+    """
+
+    def setUp(self):
+        self.institution, self.program, _ = activate_plan()
+        self.term = open_term(self.program)
+        self.course, self.enrollment = enrol(self.term, self.institution, "AAA")
+        StudyLog.objects.create(
+            enrollment=self.enrollment, hours=2.0, studied_on=timezone.localdate()
+        )
+
+    def test_every_body_cell_carries_its_column_label(self):
+        html = self.client.get(reverse("studying:quick_log"), headers=EN).content.decode()
+
+        for label in (
+            "Course",
+            "Hours",
+            "Date studied",
+            "Left off",
+            "Recorded",
+            "Delete",
+        ):
+            self.assertIn(f'data-label="{label}"', html)
+        self.assertNotIn("<script", html)

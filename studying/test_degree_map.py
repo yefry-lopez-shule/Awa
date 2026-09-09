@@ -220,3 +220,24 @@ class DegreeMapActivePlanTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["blocks"], [])
+
+
+class DegreeMapResponsiveReflowTests(TestCase):
+    """#32: the per-Bloque table reflows to stacked, labelled rows on a narrow
+    viewport. The mechanism is a `data-label` on every body cell plus a CSS
+    rule — no JS, no view change — and the .block-header section rows stay.
+    """
+
+    def test_every_body_cell_carries_its_column_label(self):
+        build_map_plan()
+
+        html = self.client.get(
+            reverse("studying:degree_map"), headers={"accept-language": "en"}
+        ).content.decode()
+
+        for label in ('Course', 'Créditos', 'Standing'):
+            self.assertIn(f'data-label="{label}"', html)
+        # the section heading row is untouched
+        self.assertIn('class="block-header"', html)
+        # pure CSS + attributes: nothing scripted was added to the screen
+        self.assertNotIn('<script', html)
