@@ -36,15 +36,15 @@
             <tbody>
                 {% for row in block.rows %}
                     <tr>
-                        <td>
+                        <td data-label="{% trans 'Course' %}">
                             {% if row.is_slot %}
                                 {% trans "Slot" %}: {{ row.entry.slot_label }} #{{ row.entry.slot_index }}
                             {% else %}
                                 <a href="{% url 'studying:course_detail' row.course.id %}">{{ row.course.code }} — {{ row.course.name }}</a>
                             {% endif %}
                         </td>
-                        <td>{{ row.credits }}</td>
-                        <td>
+                        <td data-label="{% trans 'Créditos' %}">{{ row.credits }}</td>
+                        <td data-label="{% trans 'Standing' %}">
                             {% if row.is_slot %}
                                 <span class="warning">{% trans "outstanding" %}</span>
                             {% else %}

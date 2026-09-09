@@ -55,29 +55,29 @@
             <tbody>
                 {% for item in items %}
                     <tr>
-                        <td>
+                        <td data-label="{% trans 'Type' %}">
                             <select name="item_{{ item.id }}_type">
                                 {% for t in item_types %}
                                     <option value="{{ t }}" {% if t == item.type %}selected{% endif %}>{{ t }}</option>
                                 {% endfor %}
                             </select>
                         </td>
-                        <td><input type="number" step="any" min="0" name="item_{{ item.id }}_weight" value="{{ item.weight|floatformat:'-2' }}"></td>
-                        <td><input type="date" name="item_{{ item.id }}_due" value="{{ item.due_at|date:'Y-m-d' }}"></td>
-                        <td><input type="number" step="any" name="item_{{ item.id }}_grade" value="{% if item.grade is not None %}{{ item.grade|floatformat:'-2' }}{% endif %}"></td>
-                        <td><input type="checkbox" name="item_{{ item.id }}_delete"></td>
+                        <td data-label="{% trans 'Weight' %}"><input type="number" step="any" min="0" name="item_{{ item.id }}_weight" value="{{ item.weight|floatformat:'-2' }}"></td>
+                        <td data-label="{% trans 'Due' %}"><input type="date" name="item_{{ item.id }}_due" value="{{ item.due_at|date:'Y-m-d' }}"></td>
+                        <td data-label="{% trans 'Grade' %}"><input type="number" step="any" name="item_{{ item.id }}_grade" value="{% if item.grade is not None %}{{ item.grade|floatformat:'-2' }}{% endif %}"></td>
+                        <td data-label="{% trans 'Remove' %}"><input type="checkbox" name="item_{{ item.id }}_delete"></td>
                     </tr>
                 {% endfor %}
                 <tr>
-                    <td>
+                    <td data-label="{% trans 'Type' %}">
                         <select name="new_item_type">
                             <option value="">—</option>
                             {% for t in item_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
                         </select>
                     </td>
-                    <td><input type="number" step="any" min="0" name="new_item_weight"></td>
-                    <td><input type="date" name="new_item_due"></td>
-                    <td><input type="number" step="any" name="new_item_grade"></td>
+                    <td data-label="{% trans 'Weight' %}"><input type="number" step="any" min="0" name="new_item_weight"></td>
+                    <td data-label="{% trans 'Due' %}"><input type="date" name="new_item_due"></td>
+                    <td data-label="{% trans 'Grade' %}"><input type="number" step="any" name="new_item_grade"></td>
                     <td></td>
                 </tr>
             </tbody>

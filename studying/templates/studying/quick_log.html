@@ -27,7 +27,7 @@
         </thead>
         <tbody>
             <tr>
-                <td>
+                <td data-label="{% trans 'Course' %}">
                     <select name="new_log_course">
                         <option value="">—</option>
                         {% for enrollment in enrollments %}
@@ -35,9 +35,9 @@
                         {% endfor %}
                     </select>
                 </td>
-                <td><input type="number" step="any" min="0" name="new_log_hours"></td>
-                <td><input type="date" name="new_log_studied_on" value="{{ today|date:'Y-m-d' }}"></td>
-                <td><input type="text" maxlength="500" name="new_log_note"></td>
+                <td data-label="{% trans 'Hours' %}"><input type="number" step="any" min="0" name="new_log_hours"></td>
+                <td data-label="{% trans 'Date studied' %}"><input type="date" name="new_log_studied_on" value="{{ today|date:'Y-m-d' }}"></td>
+                <td data-label="{% trans 'Left off' %}"><input type="text" maxlength="500" name="new_log_note"></td>
             </tr>
         </tbody>
     </table>
@@ -59,12 +59,12 @@
             <tbody>
                 {% for log in logs %}
                     <tr>
-                        <td>{{ log.enrollment.course.code }} — {{ log.enrollment.course.name }}</td>
-                        <td><input type="number" step="any" min="0" name="log_{{ log.id }}_hours" value="{{ log.hours|floatformat:'-2' }}"></td>
-                        <td><input type="date" name="log_{{ log.id }}_studied_on" value="{{ log.studied_on|date:'Y-m-d' }}"></td>
-                        <td>{{ log.recorded_at|date:"j M Y" }}</td>
-                        <td><input type="text" maxlength="500" name="log_{{ log.id }}_note" value="{{ log.note }}"></td>
-                        <td><input type="checkbox" name="log_{{ log.id }}_delete"></td>
+                        <td data-label="{% trans 'Course' %}">{{ log.enrollment.course.code }} — {{ log.enrollment.course.name }}</td>
+                        <td data-label="{% trans 'Hours' %}"><input type="number" step="any" min="0" name="log_{{ log.id }}_hours" value="{{ log.hours|floatformat:'-2' }}"></td>
+                        <td data-label="{% trans 'Date studied' %}"><input type="date" name="log_{{ log.id }}_studied_on" value="{{ log.studied_on|date:'Y-m-d' }}"></td>
+                        <td data-label="{% trans 'Recorded' %}">{{ log.recorded_at|date:"j M Y" }}</td>
+                        <td data-label="{% trans 'Left off' %}"><input type="text" maxlength="500" name="log_{{ log.id }}_note" value="{{ log.note }}"></td>
+                        <td data-label="{% trans 'Delete' %}"><input type="checkbox" name="log_{{ log.id }}_delete"></td>
                     </tr>
                 {% endfor %}
             </tbody>

@@ -265,8 +265,9 @@ body > .messages {
 
 /* ---------------------------------------------------------------- tables --- */
 /* A straight port of the borders/padding the old base.html <style> carried, so
- * the grids don't regress when that block is deleted. The responsive reflow of
- * these tables is #32 (plain tables) and #33 (setup grids), not this ticket. */
+ * the grids don't regress when that block is deleted. This is the wide-screen
+ * layout; the narrow reflow follows below (#32 plain tables; #33 does the
+ * setup grids). */
 main table {
   border-collapse: collapse;
 }
@@ -291,6 +292,67 @@ main td input[type="time"],
 .numeric {
   font-family: var(--awa-font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+/* ----------------------------------------------------- responsive reflow --- */
+/* #32: below the nav's one breakpoint (48rem), the four "plain" data screens
+ * — degree map, course detail, availability template, quick log — stop being
+ * horizontally-scrolling tables and become stacked, self-labelling rows, so a
+ * phone never scrolls the page body sideways.
+ *
+ * A table opts in purely by carrying `data-label` on its body cells (the
+ * column name the cell should announce). `:has()` keys the whole switch off
+ * that attribute, so nothing a view emits has to change — only the template
+ * attributes — and tables not yet converted (the #33 setup grids, the
+ * roadmap) are untouched. `:has()` is Baseline 2023; this app is served to a
+ * current browser by `runserver`.
+ *
+ * Each <tr> becomes a card; each <td> prints its `data-label` above the
+ * value; the <thead> column row is dropped. The degree map's `.block-header`
+ * rows stay put as section headings (they keep the wide-screen tint/weight
+ * from the rule above). */
+@media (max-width: 47.99rem) {
+  main table:has(td[data-label]),
+  main table:has(td[data-label]) thead,
+  main table:has(td[data-label]) tbody,
+  main table:has(td[data-label]) tr {
+    display: block;
+  }
+
+  /* the column headings are surfaced per-cell, below */
+  main table:has(td[data-label]) thead tr:not(.block-header) {
+    display: none;
+  }
+
+  main table:has(td[data-label]) tbody tr {
+    border: 1px solid var(--pico-table-border-color);
+    border-radius: var(--awa-radius);
+    margin-bottom: var(--awa-space-4);
+  }
+
+  main table:has(td[data-label]) td {
+    display: block;
+    border: 0;
+    border-bottom: 1px solid var(--pico-table-border-color);
+  }
+
+  main table:has(td[data-label]) tr td:last-child {
+    border-bottom: 0;
+  }
+
+  /* the "add a row" line has no Remove control — drop its spacer cell */
+  main table:has(td[data-label]) td:empty {
+    display: none;
+  }
+
+  main td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: var(--awa-space-1);
+    font-size: var(--awa-text-sm);
+    font-weight: 600;
+    color: var(--awa-projection);
+  }
 }
 
 /* --------------------------------------------------------- status colours --- */

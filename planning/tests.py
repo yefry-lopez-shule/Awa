@@ -304,3 +304,39 @@ class AvailabilityTemplateViewTests(TestCase):
 
         self.assertFalse(AvailabilityBlock.objects.exists())
         self.assertEqual(capacity_hours(), 12.0)
+
+
+class AvailabilityTemplateReflowTests(TestCase):
+    """#32: the Targets, Study Windows and Availability Blocks tables reflow
+    to stacked, labelled rows on a narrow viewport — a `data-label` on every
+    body cell plus a CSS rule, with no JS and no view change.
+    """
+
+    def test_every_body_cell_carries_its_column_label(self):
+        institution, program = make_program()
+        plan = Plan.objects.create(program=program, name="TEST-1")
+        settings_obj = AppSettings.load()
+        settings_obj.active_plan = plan
+        settings_obj.save()
+        term = make_term(program)
+        enrol(term, institution, "101", credits=4)
+        StudyWindow.objects.create(weekday=Weekday.MONDAY, start=T(18, 0), end=T(22, 0))
+        AvailabilityBlock.objects.create(
+            weekday=Weekday.TUESDAY, start=T(9, 0), end=T(12, 0), label="Work"
+        )
+
+        html = self.client.get(
+            reverse("planning:availability_template"), headers={"accept-language": "en"}
+        ).content.decode()
+
+        for label in (
+            "Course",
+            "Target (h/week)",
+            "Weekday",
+            "Start",
+            "End",
+            "Label",
+            "Remove",
+        ):
+            self.assertIn(f'data-label="{label}"', html)
+        self.assertNotIn("<script", html)
