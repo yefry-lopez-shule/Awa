@@ -130,6 +130,9 @@
   --awa-behind: #b42318;
   --awa-projection: #5a6472;
 
+  /* focus ring — a blue distinct from the jade accent, AA against both grounds */
+  --awa-focus: #0b57d0;
+
   /* Pico overrides */
   --pico-font-family-sans-serif: var(--awa-font-sans);
   --pico-font-family: var(--awa-font-sans);
@@ -151,6 +154,7 @@
     --awa-unlocked-border: #2f5c3f;
     --awa-behind: #f2836f;
     --awa-projection: #9aa4b2;
+    --awa-focus: #7cacf8;
   }
 }
 
@@ -177,7 +181,11 @@ body > .messages {
 
 /* ------------------------------------------------------------------ nav --- */
 .site-nav {
-  /* full-bleed bottom rule; the inner .nav-disclosure carries the width cap */
+  /* full-bleed bottom rule; the inner .nav-disclosure carries the width cap.
+   * Pico makes a bare <nav> a flex row, which would collapse .nav-disclosure
+   * to its (zero-width, summary-hidden) content on wide screens — force it
+   * back to block so the disclosure fills the bar. */
+  display: block;
   border-bottom: 1px solid var(--pico-muted-border-color);
   margin-bottom: 0;
   padding-block: var(--awa-space-3);
@@ -282,6 +290,22 @@ main td {
 .block-header td {
   background: var(--pico-card-sectioning-background-color);
   font-weight: 600;
+}
+
+/* #34: one table-polish treatment for all six grid screens — a defined
+ * header band and zebra rows. Wide layout only: below the reflow breakpoint
+ * every row is already its own bordered card, so a stripe there would just
+ * tint whole cards. */
+@media (min-width: 48rem) {
+  main thead th {
+    text-align: left;
+    background: var(--pico-card-sectioning-background-color);
+    border-bottom-width: 2px;
+  }
+
+  main tbody tr:nth-of-type(even):not(.block-header) td {
+    background: var(--pico-table-row-stripped-background-color);
+  }
 }
 
 /* Numeric / código columns read as data — mono, tabular figures. */
@@ -497,27 +521,78 @@ main td input[type="time"],
   background: var(--awa-behind);
 }
 
-/* --------------------------------------------------------- notices --- */
-/* Another port: the old base.html <style> gave .errors and .messages a tinted
- * box so they don't vanish when it's deleted. The shared _errors.html partial
- * stays otherwise unstyled — its real treatment, with empty states and focus,
- * is the polish pass (#34). Reworked here only so the tints hold in dark. */
-.errors,
+/* --------------------------------------------------------- alerts --- */
+/* #34: the messages-framework output (base.html) and the shared _errors.html
+ * partial render as the same alert — a sprite icon, a colour-coded box that
+ * holds in light and dark. `.alert` is the shared shell; the variant class is
+ * the message's own `tags` (`success` / `error` / `warning`), and `.errors`
+ * is the partial's container. */
 .messages {
+  list-style: none;
+  padding: 0;
+  margin: var(--awa-space-4) 0 0;
+}
+
+.alert {
+  display: flex;
+  gap: var(--awa-space-2);
+  align-items: flex-start;
   border: 1px solid;
+  border-radius: var(--awa-radius);
   padding: var(--awa-space-3) var(--awa-space-4);
+  /* stands alone (the _errors.html partial, straight before a form) or
+   * stacked (the messages list) — a bottom margin covers both. */
   margin-bottom: var(--awa-space-4);
 }
 
-.errors {
+.alert .icon {
+  margin-top: 0.15em;
+}
+
+.alert ul {
+  margin: 0;
+  padding-left: var(--awa-space-4);
+}
+
+.alert.success {
+  color: var(--awa-unlocked);
+  background: var(--awa-unlocked-bg);
+  border-color: var(--awa-unlocked-border);
+}
+
+.errors,
+.alert.error,
+.alert.warning {
   color: var(--awa-warning);
   background: var(--awa-warning-bg);
   border-color: var(--awa-warning-border);
 }
 
-.messages {
-  list-style: none;
-  color: var(--awa-unlocked);
-  background: var(--awa-unlocked-bg);
-  border-color: var(--awa-unlocked-border);
+/* ----------------------------------------------------- empty states --- */
+/* #34: every screen's "nothing here yet" prose is this one calm block —
+ * centred, muted, set apart with a dashed rule — rather than a bare <p>. */
+.empty-state {
+  max-width: 40rem;
+  margin: var(--awa-space-5) auto;
+  padding: var(--awa-space-5);
+  border: 1px dashed var(--pico-muted-border-color);
+  border-radius: var(--awa-radius);
+  text-align: center;
+  color: var(--awa-projection);
+}
+
+/* ------------------------------------------------------------- focus --- */
+/* #34: one visible focus ring on every interactive element, both themes.
+ * Pico ships focus styles; this unifies them and guarantees a ring on the
+ * custom nav <summary> and the language <select>. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--awa-focus);
+  outline-offset: 2px;
+  border-radius: var(--awa-radius);
 }

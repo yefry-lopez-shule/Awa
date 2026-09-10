@@ -7,7 +7,7 @@
 <h1>{% trans "Cuatrimestre setup" %}</h1>
 
 {% if not plan %}
-    <p>{% trans "No active Plan yet — load one with manage.py loadplan." %}</p>
+    <p class="empty-state">{% trans "No active Plan yet — load one with manage.py loadplan." %}</p>
 {% else %}
 
 {% include "_errors.html" %}
@@ -63,7 +63,7 @@
 
         <h3>{% trans "Enrol" %}</h3>
         {% if not enrol_rows %}
-            <p>{% trans "No Courses are unlocked to enrol in yet — close a Term with a passing Outcome first." %}</p>
+            <p class="empty-state">{% trans "No Courses are unlocked to enrol in yet — close a Term with a passing Outcome first." %}</p>
         {% endif %}
 
         {% for row in enrol_rows %}

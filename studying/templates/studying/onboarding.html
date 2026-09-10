@@ -7,7 +7,7 @@
 <h1>{% trans "Onboarding checklist" %}</h1>
 
 {% if not plan %}
-    <p>{% trans "No active Plan yet — load one with manage.py loadplan." %}</p>
+    <p class="empty-state">{% trans "No active Plan yet — load one with manage.py loadplan." %}</p>
 {% else %}
     <p>{{ plan }}</p>
 
@@ -22,8 +22,13 @@
             <label>{% trans "End date" %} <input type="date" name="term_end"></label>
         </fieldset>
 
+        {% regroup rows by entry.block as block_list %}
+        {% for block_group in block_list %}
         <table>
             <thead>
+                <tr class="block-header">
+                    <td colspan="4">{% blocktrans with name=block_group.grouper.name credits=block_group.grouper.credits %}Bloque {{ name }} ({{ credits }} créditos){% endblocktrans %}</td>
+                </tr>
                 <tr>
                     <th>{% trans "Course" %}</th>
                     <th>{% trans "Status" %}</th>
@@ -32,11 +37,6 @@
                 </tr>
             </thead>
             <tbody>
-                {% regroup rows by entry.block as block_list %}
-                {% for block_group in block_list %}
-                    <tr class="block-header">
-                        <td colspan="4">{% blocktrans with name=block_group.grouper.name credits=block_group.grouper.credits %}Bloque {{ name }} ({{ credits }} créditos){% endblocktrans %}</td>
-                    </tr>
                     {% for row in block_group.list %}
                         <tr>
                             <td data-label="{% trans 'Course' %}">
@@ -74,9 +74,9 @@
                             </td>
                         </tr>
                     {% endfor %}
-                {% endfor %}
             </tbody>
         </table>
+        {% endfor %}
 
         <button type="submit">{% trans "Save" %}</button>
     </form>
