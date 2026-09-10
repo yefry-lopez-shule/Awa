@@ -89,6 +89,6 @@
     {% if final_grade is not None %}
         <p>{% blocktrans with grade=final_grade|floatformat:'-2' %}Final grade: {{ grade }}{% endblocktrans %}</p>
     {% endif %}
-    <p>{% trans "No active Enrollment — Graded Items are entered against an Enrollment." %}</p>
+    <p class="empty-state">{% trans "No active Enrollment — Graded Items are entered against an Enrollment." %}</p>
 {% endif %}
 {% endblock %}

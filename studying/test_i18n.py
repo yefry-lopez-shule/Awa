@@ -327,6 +327,51 @@ class EveryScreenRendersInBothLocalesTests(TestCase):
                     self.assertIn(b"data-label=", response.content)
                     self.assertNotIn(b"<script", response.content)
 
+    def test_notices_render_as_iconed_colour_coded_alerts(self):
+        # #34: the shared _errors partial and the messages-framework output are
+        # both styled alerts — a sprite icon, a role, a colour-coded box that
+        # holds in light and dark. Still no view change: the error list and the
+        # message text are exactly what the view already produced.
+        self.client.post(reverse("set_language"), {"language": "en", "next": "/"})
+
+        bad = self.client.post(
+            reverse("studying:quick_log"),
+            {
+                "new_log_course": str(self.course.id),
+                "new_log_hours": "0",
+                "new_log_studied_on": "2026-03-01",
+            },
+        )
+        self.assertContains(bad, 'class="errors alert')
+        self.assertContains(bad, 'role="alert"')
+        errors_block = bad.content.decode().split('class="errors alert', 1)[1][:400]
+        self.assertIn('<svg class="icon"', errors_block)
+
+        ok = self.client.post(
+            reverse("studying:quick_log"),
+            {
+                "new_log_course": str(self.course.id),
+                "new_log_hours": "2",
+                "new_log_studied_on": "2026-03-01",
+            },
+            follow=True,
+        )
+        self.assertContains(ok, 'class="alert success"')
+        messages_block = ok.content.decode().split('class="messages"', 1)[1][:400]
+        self.assertIn('<svg class="icon"', messages_block)
+
+    def test_focus_ring_empty_state_and_table_polish_are_defined_in_the_stylesheet(self):
+        # #34: the polish pass is CSS + template attributes only. The focus
+        # ring, the shared empty-state block, the alert box and the table
+        # zebra/header treatment all live in app.css.
+        css = Path(finders.find("awa/app.css")).read_text(encoding="utf-8")
+        self.assertIn(":focus-visible", css)
+        self.assertIn("outline", css)
+        self.assertIn("--awa-focus", css)
+        self.assertIn(".empty-state", css)
+        self.assertIn(".alert", css)
+        self.assertRegex(css, r"nth-(child|of-type)\(even\)")
+
     def test_vendored_pico_matches_the_hash_pinned_in_its_readme(self):
         # #30 / epic #29: Pico is "hash-checked against the GitHub release". The
         # SHA-256 recorded in static/vendor/README.md is the check; this asserts
@@ -335,3 +380,35 @@ class EveryScreenRendersInBothLocalesTests(TestCase):
         digest = hashlib.sha256(pico.read_bytes()).hexdigest()
         readme = (pico.parent / "README.md").read_text(encoding="utf-8")
         self.assertIn(digest, readme)
+
+
+class EmptyStatesTests(TestCase):
+    """#34: every screen's "nothing here yet" prose is the same calm block,
+    not a bare <p>. Driven with a near-empty database so each screen falls
+    through to its empty state, in both locales.
+    """
+
+    def test_each_screen_empty_state_carries_the_shared_class(self):
+        course = Course.objects.create(
+            institution=Institution.objects.create(name="UNED", country="CR"),
+            code="03304",
+            name="Cálculo",
+            credits=3,
+        )
+        urls = [
+            reverse("planning:dashboard"),
+            reverse("studying:quick_log"),
+            reverse("studying:onboarding"),
+            reverse("studying:cuatrimestre_setup"),
+            reverse("studying:degree_map"),
+            reverse("planning:availability_template"),
+            reverse("reference:roadmap"),
+            reverse("studying:course_detail", args=[course.id]),
+        ]
+        for language in ("es", "en"):
+            self.client.post(reverse("set_language"), {"language": language, "next": "/"})
+            for url in urls:
+                with self.subTest(language=language, url=url):
+                    response = self.client.get(url)
+                    self.assertEqual(response.status_code, 200)
+                    self.assertContains(response, 'class="empty-state"')

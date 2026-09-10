@@ -7,7 +7,7 @@
 <h1>{% trans "Degree map" %}</h1>
 
 {% if not plan %}
-    <p>{% trans "No active Plan yet — load one with manage.py loadplan." %}</p>
+    <p class="empty-state">{% trans "No active Plan yet — load one with manage.py loadplan." %}</p>
 {% else %}
     <p>{{ plan }}</p>
 

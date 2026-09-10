@@ -47,7 +47,17 @@
 </nav>
 {% if messages %}
     <ul class="messages">
-        {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+        {% comment %}
+        Every view raises these through messages.success(); the tag class is
+        still emitted so a later messages.error() or .warning() picks up the
+        error colours from app.css without a template change.
+        {% endcomment %}
+        {% for message in messages %}
+            <li class="alert {{ message.tags }}" role="status">
+                {% include "_icon.html" with name="unlocked" %}
+                <span>{{ message }}</span>
+            </li>
+        {% endfor %}
     </ul>
 {% endif %}
 <main>

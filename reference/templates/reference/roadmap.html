@@ -10,7 +10,7 @@
 </p>
 
 {% if not universities %}
-    <p>{% trans "No roadmap imported yet — load one with manage.py loadroadmap." %}</p>
+    <p class="empty-state">{% trans "No roadmap imported yet — load one with manage.py loadroadmap." %}</p>
 {% else %}
     {% for university in universities %}
         <h2>{{ university.name }}</h2>

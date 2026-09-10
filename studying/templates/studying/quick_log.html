@@ -7,7 +7,7 @@
 <h1>{% trans "Quick log" %}</h1>
 
 {% if not term %}
-    <p>{% trans "No Term is open yet. Mark a Course in progress on the onboarding checklist first." %}</p>
+    <p class="empty-state">{% trans "No Term is open yet. Mark a Course in progress on the onboarding checklist first." %}</p>
 {% else %}
 
 {% include "_errors.html" %}
