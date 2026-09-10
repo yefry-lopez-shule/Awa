@@ -372,6 +372,20 @@ class EveryScreenRendersInBothLocalesTests(TestCase):
         self.assertIn(".alert", css)
         self.assertRegex(css, r"nth-(child|of-type)\(even\)")
 
+    def test_wide_nav_reveals_the_css_only_disclosure_body(self):
+        # Regression: current Chromium wraps a closed <details> body in a
+        # `::details-content` box with `content-visibility: hidden`, which a
+        # `display:` on the inner <ul> can't defeat — so the wide-screen nav
+        # rule must reveal that box, or every link vanishes above 48rem. The
+        # nav links themselves are still in the HTML in both locales.
+        css = Path(finders.find("awa/app.css")).read_text(encoding="utf-8")
+        self.assertIn("::details-content", css)
+        self.assertIn(".nav-disclosure > summary::after", css)  # Pico chevron off
+        for language in ("es", "en"):
+            for url, response in self.each_screen(language):
+                with self.subTest(language=language, url=url):
+                    self.assertContains(response, reverse("studying:degree_map"))
+
     def test_vendored_pico_matches_the_hash_pinned_in_its_readme(self):
         # #30 / epic #29: Pico is "hash-checked against the GitHub release". The
         # SHA-256 recorded in static/vendor/README.md is the check; this asserts
