@@ -221,7 +221,11 @@ body > .messages {
  * Narrow (default): the summary shows; the list is a stacked column that the
  * UA hides until the student opens <details>.
  * Wide (>= 48rem, the one breakpoint): the summary is hidden and the list is
- * force-shown as a row, so the [open] state stops mattering. No script. */
+ * force-shown as a row, so the [open] state stops mattering. No script.
+ *
+ * Current Chromium wraps a closed <details>'s body in a `::details-content`
+ * box with `content-visibility: hidden`, which a `display:` on the inner list
+ * can no longer defeat — so the wide rule reveals that box directly. */
 .nav-disclosure {
   border: 0;
   padding-block: 0;
@@ -240,6 +244,12 @@ body > .messages {
   display: none;
 }
 
+/* Pico gives every <summary> a floated accordion chevron (`summary::after`);
+ * this disclosure carries its own menu glyph, so drop it. */
+.nav-disclosure > summary::after {
+  display: none;
+}
+
 .site-nav .nav-links {
   list-style: none;
   margin: 0;
@@ -253,6 +263,11 @@ body > .messages {
 @media (min-width: 48rem) {
   .nav-disclosure > summary {
     display: none;
+  }
+  /* reveal the collapsed-<details> body box (Chromium ::details-content), and
+   * fall back to the older UA rule for engines without that pseudo-element */
+  .nav-disclosure::details-content {
+    content-visibility: visible;
   }
   .nav-disclosure > .nav-links {
     display: flex !important; /* beats the UA `details:not([open])` rule */
