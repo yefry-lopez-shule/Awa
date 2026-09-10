@@ -370,6 +370,31 @@ class NewTermTests(TestCase):
         self.assertFalse(Term.objects.exists())
 
 
+class ResponsiveReflowTests(TestCase):
+    """#33: both steps' grids reflow to stacked, labelled fields on a narrow
+    viewport — a `data-label` on every body cell reusing the #32 CSS rule,
+    no JS, no view change.
+    """
+
+    def test_the_closeout_list_cells_carry_their_column_labels(self):
+        build()
+
+        html = self.client.get(URL, headers={"accept-language": "en"}).content.decode()
+
+        for label in ("Course", "Weighted grade so far", "Outcome"):
+            self.assertIn(f'data-label="{label}"', html)
+        self.assertNotIn("<script", html)
+
+    def test_the_new_term_deadlines_grid_cells_carry_their_column_labels(self):
+        build(with_last_term=False)
+
+        html = self.client.get(URL, headers={"accept-language": "en"}).content.decode()
+
+        for label in ("Type", "Weight", "Due", "Remove"):
+            self.assertIn(f'data-label="{label}"', html)
+        self.assertNotIn("<script", html)
+
+
 class NoPlanTests(TestCase):
     def test_renders_without_an_active_plan(self):
         response = self.client.get(URL)

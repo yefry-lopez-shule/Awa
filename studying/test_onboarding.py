@@ -92,6 +92,27 @@ class OnboardingRenderTests(TestCase):
         self.assertEqual(rows_by_entry[ctx["entry_gated"].id]["status"], Status.PENDING)
 
 
+class OnboardingResponsiveReflowTests(TestCase):
+    """#33: the checklist reflows to stacked, labelled fields on a narrow
+    viewport — a `data-label` on every body cell plus the #32 CSS rule, no
+    JS, no view change — and the Bloque section rows stay as separators.
+    """
+
+    def test_every_body_cell_carries_its_column_label(self):
+        build_plan()
+
+        html = self.client.get(
+            reverse("studying:onboarding"), headers={"accept-language": "en"}
+        ).content.decode()
+
+        for label in ("Course", "Status", "Grade", "Difficulty"):
+            self.assertIn(f'data-label="{label}"', html)
+        # the Bloque heading rows are untouched
+        self.assertIn('class="block-header"', html)
+        # pure CSS + attributes: nothing scripted was added to the screen
+        self.assertNotIn("<script", html)
+
+
 class OnboardingSubmitHistoricalStatusTests(TestCase):
     def test_setting_passed_writes_course_status_with_no_enrollment(self):
         ctx = build_plan()

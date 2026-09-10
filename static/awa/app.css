@@ -295,22 +295,24 @@ main td input[type="time"],
 }
 
 /* ----------------------------------------------------- responsive reflow --- */
-/* #32: below the nav's one breakpoint (48rem), the four "plain" data screens
- * — degree map, course detail, availability template, quick log — stop being
+/* #32: below the nav's one breakpoint (48rem), the "plain" data screens —
+ * degree map, course detail, availability template, quick log — stop being
  * horizontally-scrolling tables and become stacked, self-labelling rows, so a
- * phone never scrolls the page body sideways.
+ * phone never scrolls the page body sideways. #33 opts the two setup grids
+ * (onboarding checklist, cuatrimestre setup) into the same rule.
  *
  * A table opts in purely by carrying `data-label` on its body cells (the
  * column name the cell should announce). `:has()` keys the whole switch off
  * that attribute, so nothing a view emits has to change — only the template
- * attributes — and tables not yet converted (the #33 setup grids, the
- * roadmap) are untouched. `:has()` is Baseline 2023; this app is served to a
- * current browser by `runserver`.
+ * attributes — and tables not yet converted (the roadmap) are untouched.
+ * `:has()` is Baseline 2023; this app is served to a current browser by
+ * `runserver`.
  *
  * Each <tr> becomes a card; each <td> prints its `data-label` above the
- * value; the <thead> column row is dropped. The degree map's `.block-header`
- * rows stay put as section headings (they keep the wide-screen tint/weight
- * from the rule above). */
+ * value; the <thead> column row is dropped. `.block-header` rows — the degree
+ * map's per-Bloque bar and the onboarding checklist's Bloque separators —
+ * stay as full-width headings (keeping the wide-screen tint/weight from the
+ * rule above), not cards. */
 @media (max-width: 47.99rem) {
   main table:has(td[data-label]),
   main table:has(td[data-label]) thead,
@@ -328,6 +330,17 @@ main td input[type="time"],
     border: 1px solid var(--pico-table-border-color);
     border-radius: var(--awa-radius);
     margin-bottom: var(--awa-space-4);
+  }
+
+  /* Bloque separators stay full-width headings, not cards (#33) */
+  main table:has(td[data-label]) tbody tr.block-header {
+    border: 0;
+    border-radius: 0;
+    margin-bottom: var(--awa-space-2);
+  }
+
+  main table:has(td[data-label]) tbody tr.block-header td {
+    border-bottom: 0;
   }
 
   main table:has(td[data-label]) td {

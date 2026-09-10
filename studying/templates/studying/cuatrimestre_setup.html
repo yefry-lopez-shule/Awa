@@ -29,8 +29,8 @@
             <tbody>
                 {% for row in closeout_rows %}
                     <tr>
-                        <td>{{ row.course.code }} — {{ row.course.name }}</td>
-                        <td>
+                        <td data-label="{% trans 'Course' %}">{{ row.course.code }} — {{ row.course.name }}</td>
+                        <td data-label="{% trans 'Weighted grade so far' %}">
                             {{ row.weighted_so_far|floatformat:"-2" }}
                             {% if row.grade_so_far is not None %}
                                 <span class="projection">({% blocktrans with g=row.grade_so_far|floatformat:"-2" %}{{ g }} across graded items{% endblocktrans %})</span>
@@ -38,7 +38,7 @@
                                 <span class="projection">({% trans "nothing graded" %})</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td data-label="{% trans 'Outcome' %}">
                             <select name="outcome_{{ row.enrollment.id }}">
                                 <option value="passed" {% if row.derived == "passed" %}selected{% endif %}>{% trans "Passed" %}</option>
                                 <option value="failed" {% if row.derived == "failed" %}selected{% endif %}>{% trans "Failed" %}</option>
@@ -96,7 +96,7 @@
                     <tbody>
                         {% for i, drow in row.deadline_rows %}
                             <tr>
-                                <td>
+                                <td data-label="{% trans 'Type' %}">
                                     <select name="deadline_{{ row.course.id }}_{{ i }}_type">
                                         <option value="">—</option>
                                         {% for t in item_types %}
@@ -104,9 +104,9 @@
                                         {% endfor %}
                                     </select>
                                 </td>
-                                <td><input type="number" step="any" min="0" name="deadline_{{ row.course.id }}_{{ i }}_weight" value="{{ drow.weight }}"></td>
-                                <td><input type="date" name="deadline_{{ row.course.id }}_{{ i }}_due"></td>
-                                <td><input type="checkbox" name="deadline_{{ row.course.id }}_{{ i }}_delete"></td>
+                                <td data-label="{% trans 'Weight' %}"><input type="number" step="any" min="0" name="deadline_{{ row.course.id }}_{{ i }}_weight" value="{{ drow.weight }}"></td>
+                                <td data-label="{% trans 'Due' %}"><input type="date" name="deadline_{{ row.course.id }}_{{ i }}_due"></td>
+                                <td data-label="{% trans 'Remove' %}"><input type="checkbox" name="deadline_{{ row.course.id }}_{{ i }}_delete"></td>
                             </tr>
                         {% endfor %}
                     </tbody>
