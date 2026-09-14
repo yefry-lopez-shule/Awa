@@ -341,48 +341,17 @@ def course_detail(request, course_id):
     return render(request, "studying/course_detail.html", context)
 
 
-def _submitted_item_rows(request):
-    """Existing items come back as `item_<id>_*`; a fresh one as `new_item_*`.
-    An unchanged row round-trips its id so its identity (and any grade already
-    on it) survives the save.
-    """
-
-    rows = []
-    ids = set()
-    for key in request.POST:
-        if key.startswith("item_") and key.endswith("_type"):
-            ids.add(key[len("item_") : -len("_type")])
-    for item_id in ids:
-        prefix = f"item_{item_id}_"
-        rows.append(
-            {
-                "id": item_id,
-                "type": request.POST.get(f"{prefix}type", "").strip(),
-                "weight_raw": request.POST.get(f"{prefix}weight", "").strip(),
-                "due_raw": request.POST.get(f"{prefix}due", "").strip(),
-                "grade_raw": request.POST.get(f"{prefix}grade", "").strip(),
-                "delete": bool(request.POST.get(f"{prefix}delete")),
-            }
-        )
-    rows.append(
-        {
-            "id": None,
-            "type": request.POST.get("new_item_type", "").strip(),
-            "weight_raw": request.POST.get("new_item_weight", "").strip(),
-            "due_raw": request.POST.get("new_item_due", "").strip(),
-            "grade_raw": request.POST.get("new_item_grade", "").strip(),
-            "delete": False,
-        }
-    )
-    return rows
-
-
 def _save_graded_items(request, enrollment):
     """Reconcile the submitted grid against the Enrollment's Graded Items.
 
+    Existing items come back as `item_<id>_*`; a fresh one as `new_item_*`.
     Nothing is written unless the whole submission is valid, and — the rule
     scope.md §5 step 4 exists for — a non-empty grid whose weights don't sum
     to `grade_scale_max` is reported and not saved.
+
+    An existing item left entirely blank is treated the same as a fresh row
+    left untouched — skipped here, which (via `submitted_ids` below) deletes
+    it by omission exactly as an explicit delete checkbox would.
     """
 
     program = enrollment.term.program
@@ -390,18 +359,26 @@ def _save_graded_items(request, enrollment):
     errors = []
     parsed = []
 
-    for row in _submitted_item_rows(request):
+    existing_rows, new_row = parse_grid(
+        request.POST,
+        "item_",
+        ["type", "weight", "due", "grade", "delete"],
+        new_prefix="new_item",
+    )
+    rows = existing_rows + ([{**new_row, "id": None}] if new_row is not None else [])
+
+    for row in rows:
         if row["delete"]:
             continue
-        if not any((row["type"], row["weight_raw"], row["due_raw"], row["grade_raw"])):
-            continue  # An untouched new row.
+        if not any((row["type"], row["weight"], row["due"], row["grade"])):
+            continue  # An untouched new row, or an existing item cleared out.
 
         if row["type"] not in valid_types:
             errors.append(_("Choose an item type from the Program's list."))
             continue
 
         try:
-            weight = float(row["weight_raw"])
+            weight = float(row["weight"])
         except ValueError:
             errors.append(_("A weight must be a number."))
             continue
@@ -410,16 +387,16 @@ def _save_graded_items(request, enrollment):
             continue
 
         due_at = None
-        if row["due_raw"]:
+        if row["due"]:
             try:
-                due_at = datetime.date.fromisoformat(row["due_raw"])
+                due_at = datetime.date.fromisoformat(row["due"])
             except ValueError:
                 errors.append(_("A due date must be a valid date."))
 
         grade = None
-        if row["grade_raw"]:
+        if row["grade"]:
             try:
-                grade = float(row["grade_raw"])
+                grade = float(row["grade"])
             except ValueError:
                 errors.append(_("A grade must be a number."))
             else:
