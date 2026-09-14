@@ -42,6 +42,9 @@ INSTALLED_APPS = [
     "studying",     # Term, Enrollment, GradedItem, StudyLog, CourseStatus (#2)
     "planning",     # StudyWindow, AvailabilityBlock, ScoringConfig, rank()/forecast() (#1, #4)
     "reference",    # RoadmapEntry, CoverageLink (#5)
+    # Non-domain: shared utility code with no models, outside the domain
+    # apps' dependency chain (#49, #50) — e.g. the editable-grid row parser.
+    "core",
 ]
 
 MIDDLEWARE = [
