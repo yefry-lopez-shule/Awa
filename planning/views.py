@@ -14,6 +14,7 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
+from core.grids import parse_grid
 from curriculum.models import AppSettings
 from studying.models import Enrollment, Outcome
 
@@ -165,6 +166,12 @@ def _parse_time(raw, errors):
 
 
 def _save_template(request):
+    """Study Windows are parsed inline (one fixed row per weekday, not a
+    grid). Availability Blocks come back as `block_<id>_*`/`new_block_*` via
+    the shared grid module — wholesale-replaced below, so an existing
+    block's `id` (present in `existing_rows` but unused here) doesn't matter.
+    """
+
     errors = []
     parsed_windows = []
 
@@ -185,21 +192,27 @@ def _save_template(request):
             continue
         parsed_windows.append((value, start, end))
 
+    existing_rows, new_row = parse_grid(
+        request.POST,
+        "block_",
+        ["weekday", "start", "end", "label", "delete"],
+        new_prefix="new_block",
+    )
     parsed_blocks = []
-    for row in _submitted_block_rows(request):
-        if row["delete"] or not any((row["start_raw"], row["end_raw"], row["label"])):
+    for row in existing_rows + ([new_row] if new_row is not None else []):
+        if row["delete"] or not any((row["start"], row["end"], row["label"])):
             continue
-        if not (row["start_raw"] and row["end_raw"] and row["label"]):
+        if not (row["start"] and row["end"] and row["label"]):
             errors.append(_("An Availability Block needs a weekday, a start, an end and a label."))
             continue
         try:
-            weekday = int(row["weekday_raw"])
+            weekday = int(row["weekday"])
             Weekday(weekday)
         except ValueError:
             errors.append(_("Invalid weekday for an Availability Block."))
             continue
-        start = _parse_time(row["start_raw"], errors)
-        end = _parse_time(row["end_raw"], errors)
+        start = _parse_time(row["start"], errors)
+        end = _parse_time(row["end"], errors)
         if start is None or end is None:
             continue
         if start >= end:
@@ -223,36 +236,3 @@ def _save_template(request):
         )
 
     return []
-
-
-def _submitted_block_rows(request):
-    """Existing blocks come back as `block_<id>_*`; a fresh one as `new_block_*`.
-    Both are re-created from scratch on save, so their ids don't matter here.
-    """
-
-    rows = []
-    ids = set()
-    for key in request.POST:
-        if key.startswith("block_") and key.endswith("_weekday"):
-            ids.add(key[len("block_") : -len("_weekday")])
-    for block_id in ids:
-        prefix = f"block_{block_id}_"
-        rows.append(
-            {
-                "weekday_raw": request.POST.get(f"{prefix}weekday", "").strip(),
-                "start_raw": request.POST.get(f"{prefix}start", "").strip(),
-                "end_raw": request.POST.get(f"{prefix}end", "").strip(),
-                "label": request.POST.get(f"{prefix}label", "").strip(),
-                "delete": bool(request.POST.get(f"{prefix}delete")),
-            }
-        )
-    rows.append(
-        {
-            "weekday_raw": request.POST.get("new_block_weekday", "").strip(),
-            "start_raw": request.POST.get("new_block_start", "").strip(),
-            "end_raw": request.POST.get("new_block_end", "").strip(),
-            "label": request.POST.get("new_block_label", "").strip(),
-            "delete": False,
-        }
-    )
-    return rows
