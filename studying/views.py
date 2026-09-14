@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
+from core.grids import parse_grid
 from curriculum.models import AppSettings, BlockEntry, Course
 from planning.forecast import forecast
 from planning.recommendation import current_term
@@ -867,35 +868,32 @@ def _parse_term_date(raw, errors, label):
 
 def _parse_deadline_grid(request, course, program, errors):
     """The deadlines grid for one enrolled Course: rows keyed
-    ``deadline_<course id>_<row>_*``. Same shape and the same weight rule as
-    the Course detail grid — a non-empty grid whose weights don't sum to
-    ``grade_scale_max`` is reported and the whole setup is refused.
+    ``deadline_<course id>_<row>_*``. Create-only — every row is a plain
+    index, none addresses an existing DB row, so there's no new-row
+    sentinel — but each still carries a "Remove" checkbox. Same shape and
+    the same weight rule as the Course detail grid — a non-empty grid whose
+    weights don't sum to ``grade_scale_max`` is reported and the whole
+    setup is refused.
     """
 
     valid_types = set(program.item_types)
-    prefix = f"deadline_{course.id}_"
-    row_keys = sorted(
-        key[len(prefix) : -len("_type")]
-        for key in request.POST
-        if key.startswith(prefix) and key.endswith("_type")
+    # `_` is this module's gettext alias — never bind it as a throwaway.
+    rows, _new_row = parse_grid(
+        request.POST, f"deadline_{course.id}_", ["type", "weight", "due", "delete"]
     )
 
-    rows = []
-    for row in row_keys:
-        base = f"{prefix}{row}_"
-        if request.POST.get(f"{base}delete"):
+    parsed = []
+    for row in rows:
+        if row["delete"]:
             continue
-        type_ = request.POST.get(f"{base}type", "").strip()
-        weight_raw = request.POST.get(f"{base}weight", "").strip()
-        due_raw = request.POST.get(f"{base}due", "").strip()
-        if not any((type_, weight_raw, due_raw)):
+        if not any((row["type"], row["weight"], row["due"])):
             continue
 
-        if type_ not in valid_types:
+        if row["type"] not in valid_types:
             errors.append(_("Choose an item type from the Program's list."))
             continue
         try:
-            weight = float(weight_raw)
+            weight = float(row["weight"])
         except ValueError:
             errors.append(_("A weight must be a number."))
             continue
@@ -903,16 +901,16 @@ def _parse_deadline_grid(request, course, program, errors):
             errors.append(_("A weight must be greater than zero."))
             continue
         due_at = None
-        if due_raw:
+        if row["due"]:
             try:
-                due_at = datetime.date.fromisoformat(due_raw)
+                due_at = datetime.date.fromisoformat(row["due"])
             except ValueError:
                 errors.append(_("A due date must be a valid date."))
                 continue
-        rows.append({"type": type_, "weight": weight, "due_at": due_at})
+        parsed.append({"type": row["type"], "weight": weight, "due_at": due_at})
 
-    total = sum(row["weight"] for row in rows)
-    if rows and round(total - program.grade_scale_max, 6) != 0:
+    total = sum(row["weight"] for row in parsed)
+    if parsed and round(total - program.grade_scale_max, 6) != 0:
         errors.append(
             _("Weights for %(code)s must sum to %(max)s; they sum to %(total)s.")
             % {
@@ -921,4 +919,4 @@ def _parse_deadline_grid(request, course, program, errors):
                 "total": "{:g}".format(total),
             }
         )
-    return rows
+    return parsed
