@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
+from core.grids import parse_grid
 from curriculum.models import AppSettings, BlockEntry, Course
 from planning.forecast import forecast
 from planning.recommendation import current_term
@@ -114,51 +115,30 @@ def quick_log(request):
     return render(request, "studying/quick_log.html", context)
 
 
-def _submitted_log_rows(request):
-    """Existing logs come back as `log_<id>_*`; the new session as `new_log_*`."""
-
-    rows = []
-    ids = set()
-    for key in request.POST:
-        if key.startswith("log_") and key.endswith("_hours"):
-            ids.add(key[len("log_") : -len("_hours")])
-    for log_id in ids:
-        prefix = f"log_{log_id}_"
-        rows.append(
-            {
-                "id": log_id,
-                "course_raw": None,  # an existing log's Course is not reassigned here
-                "hours_raw": request.POST.get(f"{prefix}hours", "").strip(),
-                "studied_raw": request.POST.get(f"{prefix}studied_on", "").strip(),
-                "note": request.POST.get(f"{prefix}note", "").strip(),
-                "delete": bool(request.POST.get(f"{prefix}delete")),
-            }
-        )
-    rows.append(
-        {
-            "id": None,
-            "course_raw": request.POST.get("new_log_course", "").strip(),
-            "hours_raw": request.POST.get("new_log_hours", "").strip(),
-            "studied_raw": request.POST.get("new_log_studied_on", "").strip(),
-            "note": request.POST.get("new_log_note", "").strip(),
-            "delete": False,
-        }
-    )
-    return rows
-
-
 def _save_study_logs(request, enrollments):
     """Reconcile the submitted rows against this Term's Study Logs. Nothing is
     written unless the whole submission is valid (the Course detail grid rule).
+
+    Existing logs come back as `log_<id>_*`, the new session as `new_log_*`.
+    `course` and `delete` are each only meaningful on one side (an existing
+    log's Course is never reassigned here; a not-yet-created session can't
+    be deleted) — asking for both fields on both sides costs nothing and
+    keeps this to one `parse_grid` call over one anchor.
     """
 
     enrollment_by_course = {str(e.course_id): e for e in enrollments}
-    rows = _submitted_log_rows(request)
-    log_ids = {r["id"] for r in rows if r["id"]}
+    existing_rows, new_row = parse_grid(
+        request.POST,
+        "log_",
+        ["course", "hours", "studied_on", "note", "delete"],
+        anchor="hours",
+        new_prefix="new_log",
+    )
+
     existing = {
         str(log.id): log
         for log in StudyLog.objects.filter(
-            id__in=log_ids, enrollment__in=enrollments
+            id__in=[row["id"] for row in existing_rows], enrollment__in=enrollments
         )
     }
 
@@ -167,45 +147,41 @@ def _save_study_logs(request, enrollments):
     to_update = []
     to_delete = []
 
-    for row in rows:
-        if row["id"] is None:
-            if not any((row["course_raw"], row["hours_raw"], row["studied_raw"], row["note"])):
-                continue  # the new-session row left untouched
-            enrollment = enrollment_by_course.get(row["course_raw"])
-            if enrollment is None:
-                errors.append(_("Choose a Course you are enrolled in this Term."))
-                continue
-            if not row["studied_raw"]:
-                row["studied_raw"] = timezone.localdate().isoformat()  # defaults to today
-        else:
-            log = existing.get(row["id"])
-            if log is None:
-                continue  # a row for a log that is not this Term's — ignore
-            if row["delete"]:
-                to_delete.append(log)
-                continue
-            enrollment = log.enrollment
+    for row in existing_rows:
+        log = existing.get(row["id"])
+        if log is None:
+            continue  # a row for a log that is not this Term's — ignore
+        if row["delete"]:
+            to_delete.append(log)
+            continue
 
-        hours = _parse_hours(row["hours_raw"], errors)
-        studied_on = _parse_studied_on(row["studied_raw"], errors)
+        hours = _parse_hours(row["hours"], errors)
+        studied_on = _parse_studied_on(row["studied_on"], errors)
         if hours is None or studied_on is None:
             continue
 
-        if row["id"] is None:
-            to_create.append(
-                StudyLog(
-                    enrollment=enrollment,
-                    hours=hours,
-                    note=row["note"],
-                    studied_on=studied_on,
-                )
-            )
+        log.hours = hours
+        log.studied_on = studied_on
+        log.note = row["note"]
+        to_update.append(log)
+
+    if new_row is not None:
+        enrollment = enrollment_by_course.get(new_row["course"])
+        if enrollment is None:
+            errors.append(_("Choose a Course you are enrolled in this Term."))
         else:
-            log = existing[row["id"]]
-            log.hours = hours
-            log.studied_on = studied_on
-            log.note = row["note"]
-            to_update.append(log)
+            studied_raw = new_row["studied_on"] or timezone.localdate().isoformat()  # defaults to today
+            hours = _parse_hours(new_row["hours"], errors)
+            studied_on = _parse_studied_on(studied_raw, errors)
+            if hours is not None and studied_on is not None:
+                to_create.append(
+                    StudyLog(
+                        enrollment=enrollment,
+                        hours=hours,
+                        note=new_row["note"],
+                        studied_on=studied_on,
+                    )
+                )
 
     if errors:
         return errors
