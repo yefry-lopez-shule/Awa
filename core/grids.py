@@ -14,6 +14,12 @@ turns POST keys into row dicts.
 def parse_grid(data, prefix, fields, *, anchor=None, new_prefix=None):
     """Extract a grid's rows from `data`.
 
+    Returns `(rows, new_row)`. Every call site imports Django's `gettext`
+    as `_` — never unpack this into a bare `_` (`rows, _ = parse_grid(...)`
+    or `_, new_row = parse_grid(...)`): it shadows that alias for the rest
+    of the enclosing function, and the next `_("...")` call crashes trying
+    to call `None`. Name the discarded half instead (`_new_row`, `_rows`).
+
     Existing rows are addressed as `<prefix><row-key>_<field>` for each name
     in `fields`. Row keys are discovered by scanning for `anchor` (the first
     field in `fields`, unless given explicitly) so field names that contain
